@@ -82,7 +82,6 @@ if file_kpi and file_fid:
 
         col_carteiras = next((c for c in base_pronta.columns if str(c).strip().lower() == "carteiras"), None)
         if col_carteiras:
-            # Lista de termos que devem ser removidos
             termos_excluir = ["SAC - Pós Venda", "Secretaria"]
             base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(termos_excluir)]
 
@@ -97,23 +96,11 @@ if file_kpi and file_fid:
                 if len(primeira_palavra) <= 3:
                     return "Candidato"
                 return primeira_palavra
-
             base_pronta[col_contato] = base_pronta[col_contato].apply(processar_contato)
 
-        # ---------- RENOMEAR E LIMPAR NÚMEROS ----------
         mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
         base_pronta = base_pronta.rename(columns=mapping)[["Nome", "Numero", "Tipo"]]
 
-        def limpar_numero(num):
-            num_limpo = re.sub(r"\D", "", str(num))  # Remove não numéricos
-            if num_limpo.startswith("55"):
-                num_limpo = num_limpo[2:]  # Remove prefixo 55 se existir
-            if num_limpo.startswith("0"):
-                num_limpo = num_limpo[1:]  # Remove zero logo após o DDI
-            return "55" + num_limpo
-
-        base_pronta["Numero"] = base_pronta["Numero"].apply(limpar_numero)
-        base_pronta = base_pronta[base_pronta["Numero"].str.len().between(12, 13)]
         base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
 
         # ---------- MONTAR LAYOUT ----------
@@ -122,11 +109,23 @@ if file_kpi and file_fid:
             "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
             "CORINGA4", "CORINGA5", "PRIORIDADE"
         ]
+        
         base_importacao = pd.DataFrame(columns=layout_colunas)
         base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].values
         base_importacao["NOME_CLIENTE"] = base_pronta["Nome"].values
         base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
         base_importacao = base_importacao[layout_colunas]
+
+        # ---------- AJUSTE FINAL NOS NÚMEROS (remove 0 após 55 e mantém linha) ----------
+        def limpar_numero_final(num):
+            num_limpo = re.sub(r"\D", "", str(num))
+            if num_limpo.startswith("55"):
+                num_limpo = num_limpo[2:]  # remove prefixo 55
+                if num_limpo.startswith("0"):
+                    num_limpo = num_limpo[1:]  # remove apenas o zero inicial
+            return "55" + num_limpo
+
+        base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(limpar_numero_final)
 
         # ---------- SAÍDA ----------
         st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
@@ -135,14 +134,12 @@ if file_kpi and file_fid:
         output = BytesIO()
         base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
+        
         st.download_button(
             label="⬇️ Baixar base de campanha (formato .csv)",
             data=output,
             file_name=nome_arquivo,
             mime="text/csv"
         )
-
-
-
 
 
