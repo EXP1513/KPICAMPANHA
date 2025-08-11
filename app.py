@@ -7,7 +7,7 @@ st.set_page_config(page_title="Gera Campanha", page_icon="🚀", layout="centere
 
 # ---------- ESTILO ----------
 st.markdown("""
-    
+    <style>
     body {background-color: #f4f6f8; font-family: 'Segoe UI', sans-serif;}
     .titulo-principal {
         background-color: #004aad; color: white; padding: 18px; border-radius: 8px;
@@ -22,10 +22,10 @@ st.markdown("""
         background-color: #fb8500; color: white;
     }
     .stSuccess {background-color: #e6f4ea;}
-    
+    </style>
 """, unsafe_allow_html=True)
 
-st.markdown("📢 Gera Campanha", unsafe_allow_html=True)
+st.markdown("<div class='titulo-principal'>📢 Gera Campanha</div>", unsafe_allow_html=True)
 
 # ---------- FUNÇÃO PARA LEITURA DE ARQUIVOS ----------
 def read_file(f):
@@ -60,8 +60,8 @@ if file_kpi and file_fid:
 
         if col_data_evento:
             try:
-                # Forçar interpretação dia antes do mês
-                df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce', dayfirst=True)
+                df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce')
+                # Considerar apenas a parte de data (remover horas)
                 datas_validas = df_kpi[col_data_evento].dropna().dt.date
 
                 if not datas_validas.empty:
@@ -146,11 +146,3 @@ if file_kpi and file_fid:
             file_name=nome_arquivo,
             mime="text/csv"
         )
-```
-
-Com esse ajuste, o nome do arquivo gerado terá sempre o dia antes do mês, formato garantido e com zeros à esquerda para dias e meses menores que 10. Se precisar de mais alguma coisa, é só falar!
-
-
-
-
-
