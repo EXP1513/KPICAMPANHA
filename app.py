@@ -55,11 +55,11 @@ if file_kpi and file_fid:
         st.error("❌ Coluna 'WhatsApp Principal' não encontrada.")
     else:
         # ---------- PEGAR DATAS PARA O NOME DO ARQUIVO ----------
+        nome_arquivo = "Abandono.csv"
         col_data_evento = next((c for c in df_kpi.columns if str(c).strip().lower() == "data evento"), None)
         
         if col_data_evento:
             try:
-                # Força a interpretação como dia/mês/ano
                 df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce', dayfirst=True)
                 datas_validas = df_kpi[col_data_evento].dropna().dt.date
                 if not datas_validas.empty:
@@ -69,13 +69,8 @@ if file_kpi and file_fid:
                         nome_arquivo = f"Abandono_{data_inicial.strftime('%d.%m')}.csv"
                     else:
                         nome_arquivo = f"Abandono_{data_inicial.strftime('%d.%m')}_a_{data_final.strftime('%d.%m')}.csv"
-                else:
-                    nome_arquivo = "Abandono.csv"
             except Exception as e:
                 st.warning(f"⚠️ Não foi possível processar as datas: {e}")
-                nome_arquivo = "Abandono.csv"
-        else:
-            nome_arquivo = "Abandono.csv"
 
         # ---------- LIMPEZA DA BASE ----------
         df_kpi = df_kpi[~df_kpi[col_whatsapp_kpi].isin(df_fid[col_whatsapp_fid])]
@@ -91,18 +86,22 @@ if file_kpi and file_fid:
             base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(termos_excluir)]
 
         col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
+        
         if col_contato:
             def processar_contato(valor):
                 texto_original = str(valor).strip()
-                if not texto_original:
-                    return texto_original
+                if not texto_original or texto_original.lower() == "nan":
+                    return "Candidato"
                 primeira_palavra = texto_original.split(" ")[0].capitalize()
-                return "Candidato" if len(primeira_palavra) < 3 else primeira_palavra
+                if len(primeira_palavra) <= 3:
+                    return "Candidato"
+                return primeira_palavra
+
             base_pronta[col_contato] = base_pronta[col_contato].apply(processar_contato)
 
+        # ---------- RENOMEAR E LIMPAR NÚMEROS ----------
         mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
-        base_pronta = base_pronta.rename(columns=mapping)
-        base_pronta = base_pronta[["Nome", "Numero", "Tipo"]]
+        base_pronta = base_pronta.rename(columns=mapping)[["Nome", "Numero", "Tipo"]]
 
         def limpar_numero(num):
             num_limpo = re.sub(r"\D", "", str(num))
@@ -114,6 +113,7 @@ if file_kpi and file_fid:
         base_pronta = base_pronta[base_pronta["Numero"].str.len().between(12, 13)]
         base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
 
+        # ---------- MONTAR LAYOUT ----------
         layout_colunas = [
             "TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "MENSAGEM", "NOME_CLIENTE",
             "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
@@ -125,6 +125,7 @@ if file_kpi and file_fid:
         base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
         base_importacao = base_importacao[layout_colunas]
 
+        # ---------- SAÍDA ----------
         st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
         st.dataframe(base_importacao)
 
@@ -137,3 +138,4 @@ if file_kpi and file_fid:
             file_name=nome_arquivo,
             mime="text/csv"
         )
+
