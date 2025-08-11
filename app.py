@@ -1,6 +1,3 @@
-Aqui está o código completo atualizado com o ajuste para garantir que o nome do arquivo saia com o formato **DD.MM** (dia antes do mês), incluindo o parâmetro `dayfirst=True` no `pd.to_datetime` para forçar a interpretação correta das datas:
-
-```python
 import streamlit as st
 import pandas as pd
 from io import BytesIO
@@ -152,6 +149,7 @@ if file_kpi and file_fid:
 ```
 
 Com esse ajuste, o nome do arquivo gerado terá sempre o dia antes do mês, formato garantido e com zeros à esquerda para dias e meses menores que 10. Se precisar de mais alguma coisa, é só falar!
+
 
 
 
