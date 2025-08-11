@@ -27,7 +27,7 @@ st.markdown("""
 
 st.markdown("<div class='titulo-principal'>📢 Gera Campanha</div>", unsafe_allow_html=True)
 
-# ---------- FUNÇÃO PARA LEITURA DE ARQUIVOS ----------
+# ---------- FUNÇÃO PARA LEITURA ----------
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
@@ -54,6 +54,12 @@ if file_kpi and file_fid:
     if not col_whatsapp_kpi or not col_whatsapp_fid:
         st.error("❌ Coluna 'WhatsApp Principal' não encontrada.")
     else:
+        # 🔹 REMOVER zero inicial na base KPI
+        df_kpi[col_whatsapp_kpi] = df_kpi[col_whatsapp_kpi].astype(str).str.strip()
+        df_kpi[col_whatsapp_kpi] = df_kpi[col_whatsapp_kpi].apply(
+            lambda x: re.sub(r'^0+', '', x) if re.match(r'^0', x) else x
+        )
+
         # ---------- PEGAR DATAS PARA O NOME DO ARQUIVO ----------
         nome_arquivo = "Abandono.csv"
         col_data_evento = next((c for c in df_kpi.columns if str(c).strip().lower() == "data evento"), None)
@@ -86,7 +92,6 @@ if file_kpi and file_fid:
             base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(termos_excluir)]
 
         col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
-        
         if col_contato:
             def processar_contato(valor):
                 texto_original = str(valor).strip()
@@ -116,10 +121,9 @@ if file_kpi and file_fid:
         base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
         base_importacao = base_importacao[layout_colunas]
 
-        # ---------- AJUSTE FINAL NOS NÚMEROS ----------
+        # ---------- AJUSTE FINAL: caso número inicie com 550, remove o 0 ----------
         def limpar_numero_final(num):
             num_limpo = re.sub(r"\D", "", str(num))
-            # Se começar com 550, mantém 55 e remove apenas o zero
             if num_limpo.startswith("550"):
                 num_limpo = "55" + num_limpo[3:]
             return num_limpo
@@ -140,3 +144,5 @@ if file_kpi and file_fid:
             file_name=nome_arquivo,
             mime="text/csv"
         )
+
+
