@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 import re
 
-st.set_page_config(page_title="Gera Campanha", page_icon="📢", layout="centered")
+st.set_page_config(page_title="Gera Campanha", page_icon="🚀", layout="centered")
 
 # ---------- ESTILO ----------
 st.markdown("""
@@ -54,6 +54,26 @@ if file_kpi and file_fid:
     if not col_whatsapp_kpi or not col_whatsapp_fid:
         st.error("❌ Coluna 'WhatsApp Principal' não encontrada.")
     else:
+        # ---------- PEGAR DATAS PARA O NOME DO ARQUIVO ----------
+        col_data_evento = next((c for c in df_kpi.columns if str(c).strip().lower() == "data evento"), None)
+        nome_arquivo = "Abandono.csv"  # padrão caso não ache a coluna
+
+        if col_data_evento:
+            try:
+                df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce')
+                # Considerar apenas a parte de data (remover horas)
+                datas_validas = df_kpi[col_data_evento].dropna().dt.date
+
+                if not datas_validas.empty:
+                    data_inicial = min(datas_validas)
+                    data_final = max(datas_validas)
+                    if data_inicial == data_final:
+                        nome_arquivo = f"Abandono_{data_inicial.strftime('%d.%m')}.csv"
+                    else:
+                        nome_arquivo = f"Abandono_{data_inicial.strftime('%d.%m')}_a_{data_final.strftime('%d.%m')}.csv"
+            except Exception as e:
+                st.warning(f"⚠️ Não foi possível processar as datas: {e}")
+
         # Remove números da KPI que estão nos fidelizados
         df_kpi = df_kpi[~df_kpi[col_whatsapp_kpi].isin(df_fid[col_whatsapp_fid])]
 
@@ -87,7 +107,6 @@ if file_kpi and file_fid:
         # --------- NORMALIZAÇÃO FINAL ---------
         def limpar_numero(num):
             num_limpo = re.sub(r"\D", "", str(num))
-            # Remove prefixo 55 se já existir
             if num_limpo.startswith("55"):
                 num_limpo = num_limpo[2:]
             return "55" + num_limpo
@@ -117,13 +136,15 @@ if file_kpi and file_fid:
         st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
         st.dataframe(base_importacao)
 
-        # Arquivo para download
+        # Arquivo para download com nome dinâmico
         output = BytesIO()
         base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
         st.download_button(
             label="⬇️ Baixar base de campanha (formato .csv)",
             data=output,
-            file_name="base_campanha.csv",
+            file_name=nome_arquivo,
             mime="text/csv"
         )
+
+
