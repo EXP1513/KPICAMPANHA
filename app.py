@@ -1,3 +1,6 @@
+Aqui está o código completo atualizado com o ajuste para garantir que o nome do arquivo saia com o formato **DD.MM** (dia antes do mês), incluindo o parâmetro `dayfirst=True` no `pd.to_datetime` para forçar a interpretação correta das datas:
+
+```python
 import streamlit as st
 import pandas as pd
 from io import BytesIO
@@ -7,7 +10,7 @@ st.set_page_config(page_title="Gera Campanha", page_icon="🚀", layout="centere
 
 # ---------- ESTILO ----------
 st.markdown("""
-    <style>
+    
     body {background-color: #f4f6f8; font-family: 'Segoe UI', sans-serif;}
     .titulo-principal {
         background-color: #004aad; color: white; padding: 18px; border-radius: 8px;
@@ -22,10 +25,10 @@ st.markdown("""
         background-color: #fb8500; color: white;
     }
     .stSuccess {background-color: #e6f4ea;}
-    </style>
+    
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='titulo-principal'>🇧🇷 🚀Gera Campanha</div>", unsafe_allow_html=True)
+st.markdown("📢 Gera Campanha", unsafe_allow_html=True)
 
 # ---------- FUNÇÃO PARA LEITURA DE ARQUIVOS ----------
 def read_file(f):
@@ -108,6 +111,48 @@ if file_kpi and file_fid:
         def limpar_numero(num):
             num_limpo = re.sub(r"\D", "", str(num))
             if num_limpo.startswith("55"):
+                num_limpo = num_limpo[2:]
+            return "55" + num_limpo
+
+        base_pronta["Numero"] = base_pronta["Numero"].apply(limpar_numero)
+
+        # Filtro de tamanho válido
+        base_pronta = base_pronta[base_pronta["Numero"].str.len().between(12, 13)]
+
+        # Remover duplicatas já com número limpo e padronizado
+        base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
+
+        # ---------- MONTAR LAYOUT FINAL ----------
+        layout_colunas = [
+            "TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "MENSAGEM", "NOME_CLIENTE",
+            "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
+            "CORINGA4", "CORINGA5", "PRIORIDADE"
+        ]
+
+        base_importacao = pd.DataFrame(columns=layout_colunas)
+        base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].values
+        base_importacao["NOME_CLIENTE"] = base_pronta["Nome"].values
+        base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
+        base_importacao = base_importacao[layout_colunas]
+
+        # ---------- SAÍDA ----------
+        st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
+        st.dataframe(base_importacao)
+
+        # Arquivo para download com nome dinâmico
+        output = BytesIO()
+        base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
+        output.seek(0)
+        st.download_button(
+            label="⬇️ Baixar base de campanha (formato .csv)",
+            data=output,
+            file_name=nome_arquivo,
+            mime="text/csv"
+        )
+```
+
+Com esse ajuste, o nome do arquivo gerado terá sempre o dia antes do mês, formato garantido e com zeros à esquerda para dias e meses menores que 10. Se precisar de mais alguma coisa, é só falar!
+
 
 
 
