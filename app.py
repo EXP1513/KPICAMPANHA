@@ -3,66 +3,31 @@ import pandas as pd
 from io import BytesIO
 import re
 
-# ==============================
-# CONFIG DO APP
-# ==============================
-st.set_page_config(
-    page_title="Gera Campanha", 
-    page_icon="📢", 
-    layout="centered"
-)
+st.set_page_config(page_title="Gera Campanha", page_icon="📢", layout="centered")
 
-# ====== ESTILO CSS INSPIRADO NO SITE EJABRASILEAD ======
 st.markdown("""
     <style>
-    /* Fundo e fonte */
-    body {
-        background-color: #f4f6f8;
-        font-family: 'Segoe UI', sans-serif;
-    }
-
-    /* Cabeçalho principal */
+    body {background-color: #f4f6f8; font-family: 'Segoe UI', sans-serif;}
     .titulo-principal {
-        background-color: #004aad;
-        color: white;
-        padding: 18px;
-        border-radius: 8px;
-        text-align: center;
-        font-size: 2em;
-        font-weight: bold;
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+        background-color: #004aad; color: white; padding: 18px; border-radius: 8px;
+        text-align: center; font-size: 2em; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         margin-bottom: 20px;
     }
-
-    /* Botão download e upload */
     div.stDownloadButton > button, div.stFileUploader > div > button {
-        background-color: #ffb703;
-        color: black;
-        font-weight: bold;
-        border-radius: 5px;
-        padding: 8px 16px;
-        border: none;
+        background-color: #ffb703; color: black; font-weight: bold; border-radius: 5px;
+        padding: 8px 16px; border: none;
     }
     div.stDownloadButton > button:hover, div.stFileUploader > div > button:hover {
-        background-color: #fb8500;
-        color: white;
+        background-color: #fb8500; color: white;
     }
-
-    /* Mensagens de sucesso */
-    .stSuccess {
-        background-color: #e6f4ea;
-    }
+    .stSuccess {background-color: #e6f4ea;}
     </style>
 """, unsafe_allow_html=True)
-
-# ====== TÍTULO PRINCIPAL ======
 st.markdown("<div class='titulo-principal'>📢 Gera Campanha</div>", unsafe_allow_html=True)
 
-# ====== FUNÇÃO LEITURA DE ARQUIVOS ======
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
-
     if f.name.lower().endswith(".csv"):
         try:
             return pd.read_csv(data_io, encoding="utf-8", sep=None, engine="python")
@@ -72,7 +37,6 @@ def read_file(f):
     else:
         return pd.read_excel(data_io)
 
-# ====== UPLOAD DAS BASES ======
 file_kpi = st.file_uploader("📂 Importar base **KPI**", type=["xlsx", "csv"])
 file_fid = st.file_uploader("📂 Importar base **FIDELIZADOS**", type=["xlsx", "csv"])
 
@@ -80,67 +44,77 @@ if file_kpi and file_fid:
     df_kpi = read_file(file_kpi)
     df_fid = read_file(file_fid)
 
-    # Localizar WhatsApp Principal nas duas bases
     col_whatsapp_kpi = next((c for c in df_kpi.columns if str(c).strip().lower() == "whatsapp principal"), None)
     col_whatsapp_fid = next((c for c in df_fid.columns if str(c).strip().lower() == "whatsapp principal"), None)
 
     if not col_whatsapp_kpi or not col_whatsapp_fid:
-        st.error("❌ Coluna 'WhatsApp Principal' não encontrada em uma das bases.")
+        st.error("❌ Coluna 'WhatsApp Principal' não encontrada.")
     else:
-        # Remover números da KPI que estão na Fidelizados
+        # Remove números da KPI que estão na Fidelizados
         df_kpi = df_kpi[~df_kpi[col_whatsapp_kpi].isin(df_fid[col_whatsapp_fid])]
 
-        # Filtrar Observação
         col_obs = next((c for c in df_kpi.columns if str(c).strip().lower() == "observação"), None)
-        if not col_obs:
-            st.error("❌ Coluna 'Observação' não encontrada.")
-        else:
-            filtro_medio = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio", case=False, na=False)]
-            filtro_fundamental = df_kpi[df_kpi[col_obs].astype(str).str.contains("Fundamental", case=False, na=False)]
-            base_pronta = pd.concat([filtro_medio, filtro_fundamental], ignore_index=True)
+        filtro_medio = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio", case=False, na=False)]
+        filtro_fundamental = df_kpi[df_kpi[col_obs].astype(str).str.contains("Fundamental", case=False, na=False)]
+        base_pronta = pd.concat([filtro_medio, filtro_fundamental], ignore_index=True)
 
-            # Excluir Carteiras indesejadas
-            col_carteiras = next((c for c in base_pronta.columns if str(c).strip().lower() == "carteiras"), None)
-            if col_carteiras:
-                termos_excluir = ["SAC - Pós Venda", "Secretaria"]
-                base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(termos_excluir)]
+        col_carteiras = next((c for c in base_pronta.columns if str(c).strip().lower() == "carteiras"), None)
+        if col_carteiras:
+            termos_excluir = ["SAC - Pós Venda", "Secretaria"]
+            base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(termos_excluir)]
 
-            # Processar Contato com nova regra
-            col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
-            if col_contato:
-                def processar_contato(valor):
-                    texto_original = str(valor).strip()
-                    if not texto_original:
-                        return texto_original
-                    primeira_palavra = texto_original.split(" ")[0].capitalize()
-                    if len(primeira_palavra) < 3:
-                        return "Candidato"
-                    return primeira_palavra
-                base_pronta[col_contato] = base_pronta[col_contato].apply(processar_contato)
+        col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
+        if col_contato:
+            def processar_contato(valor):
+                texto_original = str(valor).strip()
+                if not texto_original:
+                    return texto_original
+                primeira_palavra = texto_original.split(" ")[0].capitalize()
+                if len(primeira_palavra) < 3:
+                    return "Candidato"
+                return primeira_palavra
+            base_pronta[col_contato] = base_pronta[col_contato].apply(processar_contato)
 
-            # Manter colunas desejadas
-            cols_desejadas = [c for c in [col_contato, col_whatsapp_kpi, col_obs] if c]
-            base_pronta = base_pronta[cols_desejadas]
+        # Manter somente colunas e renomear
+        mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
+        base_pronta = base_pronta.rename(columns=mapping)
+        base_pronta = base_pronta[["Nome", "Numero", "Tipo"]].drop_duplicates(subset=["Numero"], keep="first")
 
-            # Remover duplicatas pelo WhatsApp
-            base_pronta = base_pronta.drop_duplicates(subset=[col_whatsapp_kpi], keep="first")
+        # Sempre adicionar 55 na frente e remover tudo que não é dígito
+        base_pronta["Numero"] = base_pronta["Numero"].astype(str).apply(lambda x: "55" + re.sub(r"\D", "", x))
+        # Filtros de tamanho válido (12 ou 13 dígitos)
+        base_pronta = base_pronta[base_pronta["Numero"].str.len().between(12, 13)]
 
-            # Renomear
-            mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
-            base_pronta = base_pronta.rename(columns=mapping)
-            base_pronta = base_pronta[["Nome", "Numero", "Tipo"]]
+        # MONTAR BASE NO LAYOUT SOLICITADO
+        layout_colunas = [
+            "TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "MENSAGEM", "NOME_CLIENTE",
+            "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
+            "CORINGA4", "CORINGA5", "PRIORIDADE"
+        ]
 
-            # Exibir final
-            st.success("✅ Base Pronta Final gerada!")
-            st.dataframe(base_pronta)
+        base_importacao = pd.DataFrame(columns=layout_colunas)
+        base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].values
+        base_importacao["NOME_CLIENTE"] = base_pronta["Nome"].values
+        base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
+        # As demais colunas já ficam em branco (NaN/empty string) por padrão
 
-            # Download
-            output = BytesIO()
-            base_pronta.to_excel(output, index=False)
-            output.seek(0)
-            st.download_button(
-                label="⬇️ Baixar Base Pronta Final",
-                data=output,
-                file_name="base_pronta_final.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+        # Garante que o DataFrame mantem a ordem das colunas exigida
+        base_importacao = base_importacao[layout_colunas]
+
+        st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
+        st.dataframe(base_importacao)
+
+        # Download
+        output = BytesIO()
+        # CSV com separador ; e sem index, formato igual ao anexo
+        base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
+        output.seek(0)
+        st.download_button(
+            label="⬇️ Baixar base de campanha (formato .csv)",
+            data=output,
+            file_name="base_campanha.csv",
+            mime="text/csv"
+        )
+
+
+
