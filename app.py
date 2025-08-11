@@ -116,13 +116,13 @@ if file_kpi and file_fid:
         base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
         base_importacao = base_importacao[layout_colunas]
 
-        # ---------- AJUSTE FINAL NOS NÚMEROS (remove 0 após 55 e mantém linha) ----------
+        # ---------- AJUSTE FINAL NOS NÚMEROS ----------
         def limpar_numero_final(num):
             num_limpo = re.sub(r"\D", "", str(num))
             if num_limpo.startswith("55"):
-                num_limpo = num_limpo[2:]  # remove prefixo 55
+                num_limpo = num_limpo[2:]  # Remove prefixo 55
                 if num_limpo.startswith("0"):
-                    num_limpo = num_limpo[1:]  # remove apenas o zero inicial
+                    num_limpo = num_limpo[1:]  # Remove apenas o zero inicial
             return "55" + num_limpo
 
         base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(limpar_numero_final)
