@@ -119,11 +119,10 @@ if file_kpi and file_fid:
         # ---------- AJUSTE FINAL NOS NÚMEROS ----------
         def limpar_numero_final(num):
             num_limpo = re.sub(r"\D", "", str(num))
-            if num_limpo.startswith("55"):
-                num_limpo = num_limpo[2:]  # Remove prefixo 55
-                if num_limpo.startswith("0"):
-                    num_limpo = num_limpo[1:]  # Remove apenas o zero inicial
-            return "55" + num_limpo
+            # Se começar com 550, mantém 55 e remove apenas o zero
+            if num_limpo.startswith("550"):
+                num_limpo = "55" + num_limpo[3:]
+            return num_limpo
 
         base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(limpar_numero_final)
 
@@ -141,5 +140,3 @@ if file_kpi and file_fid:
             file_name=nome_arquivo,
             mime="text/csv"
         )
-
-
