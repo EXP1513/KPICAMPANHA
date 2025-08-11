@@ -54,7 +54,7 @@ if file_kpi and file_fid:
     if not col_whatsapp_kpi or not col_whatsapp_fid:
         st.error("❌ Coluna 'WhatsApp Principal' não encontrada.")
     else:
-        # 🔹 REMOVER zero inicial na base KPI
+        # 🔹 Remove zero inicial da base KPI já no início
         df_kpi[col_whatsapp_kpi] = df_kpi[col_whatsapp_kpi].astype(str).str.strip()
         df_kpi[col_whatsapp_kpi] = df_kpi[col_whatsapp_kpi].apply(
             lambda x: re.sub(r'^0+', '', x) if re.match(r'^0', x) else x
@@ -105,7 +105,6 @@ if file_kpi and file_fid:
 
         mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
         base_pronta = base_pronta.rename(columns=mapping)[["Nome", "Numero", "Tipo"]]
-
         base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
 
         # ---------- MONTAR LAYOUT ----------
@@ -121,12 +120,11 @@ if file_kpi and file_fid:
         base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
         base_importacao = base_importacao[layout_colunas]
 
-        # ---------- AJUSTE FINAL: caso número inicie com 550, remove o 0 ----------
+        # ---------- AJUSTE FINAL NOS NÚMEROS ----------
         def limpar_numero_final(num):
-            num_limpo = re.sub(r"\D", "", str(num))
-            if num_limpo.startswith("550"):
-                num_limpo = "55" + num_limpo[3:]
-            return num_limpo
+            num_limpo = re.sub(r"\D", "", str(num))  # só dígitos
+            num_limpo = num_limpo.lstrip("0")        # remove zeros iniciais
+            return "55" + num_limpo                  # garante 55 no início
 
         base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(limpar_numero_final)
 
@@ -144,5 +142,3 @@ if file_kpi and file_fid:
             file_name=nome_arquivo,
             mime="text/csv"
         )
-
-
