@@ -5,31 +5,54 @@ import re
 
 st.set_page_config(page_title="Gera Campanha", page_icon="🚀🇧🇷🚀", layout="centered")
 
-# ---------- ESTILO ----------
+# ---------- ESTILO ADAPTATIVO AUTO PARA DARK/LIGHT ----------
 st.markdown("""
     <style>
-    body {background-color: #f4f6f8; font-family: 'Segoe UI', sans-serif;}
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: var(--background-color, #f4f6f8);
+        color: var(--text-color, #000);
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
     .titulo-principal {
-        background-color: #004aad; color: white; padding: 18px; border-radius: 8px;
-        text-align: center; font-size: 2em; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        background-color: var(--primary-color, #004aad);
+        color: var(--on-primary-color, #fff);
+        padding: 18px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 2em;
+        font-weight: bold;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         margin-bottom: 20px;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
     div.stDownloadButton > button, div.stFileUploader > div > button {
-        background-color: #ffb703; color: black; font-weight: bold; border-radius: 5px;
-        padding: 8px 16px; border: none;
+        background-color: #ffb703cc; /* Amarelo com opacidade */
+        color: black;
+        font-weight: bold;
+        border-radius: 5px;
+        padding: 8px 16px;
+        border: none;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
     div.stDownloadButton > button:hover, div.stFileUploader > div > button:hover {
-        background-color: #fb8500; color: white;
+        background-color: #fb850099; /* Hover amarelo com transparência */
+        color: white;
     }
-    .stSuccess {background-color: #e6f4ea;}
+    .stSuccess {
+        background-color: var(--success-bg, #e6f4ea);
+        color: var(--success-text, #000);
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
     .manual-popup {
-        background-color: #fff3cd;
-        border-left: 6px solid #ff9800;
+        background-color: var(--warning-bg, #fff3cdcc);
+        border-left: 6px solid #ff9800cc;
         padding: 15px;
         border-radius: 6px;
         font-size: 1.05em;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         margin-top: 20px;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -185,3 +208,4 @@ if file_kpi and file_fid:
             """,
             unsafe_allow_html=True
         )
+
