@@ -218,7 +218,7 @@ if file_kpi and file_fid:
                 <h4>📤 Próximos passos – Importar na Robbu</h4>
                 <p><strong>Agora:</strong> baixe o arquivo gerado acima (<em>{nome_arquivo}</em>).</p>
                 <ol>
-                    <li>No sistema <strong>Robbu</strong>, vá na opção <strong>"Público"</strong> e clique em <strong>"Importar Público"</strong>.</li>
+                    <li>Na <strong>Robbu</strong>, vá na opção <strong>"Público"</strong> e clique em <strong>"Importar Público"</strong>.</li>
                     <li>Na <strong>descrição</strong>, escreva <b>"Abandono"</b> junto com a data do arquivo 
                         (o arquivo já vem com a data correta no nome).</li>
                     <li>Selecione o segmento <strong>"Distribuição Manual"</strong>.</li>
@@ -226,9 +226,10 @@ if file_kpi and file_fid:
                     <li>Marque a opção: <strong>"Minha empresa possui autorização para processamento e comunicação com o público"</strong>.</li>
                     <li>Selecione o tipo de autorização como <strong>"Consentimento"</strong>.</li>
                     <li>Marque <strong>"Manter apenas neste segmento"</strong>.</li>
-                    <li>Clique em <strong>Importar</strong>.</li>
+                    <li>Clique em <strong>Importar e aguarde até a confirmação de Importação Concluida com Sucesso</strong>.</li>
                 </ol>
             </div>
             """,
             unsafe_allow_html=True
         )
+
