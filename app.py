@@ -5,7 +5,7 @@ import re
 
 st.set_page_config(page_title="Gera Campanha", page_icon="🚀🇧🇷🚀", layout="centered")
 
-# ---------- ESTILO ADAPTATIVO AUTO PARA DARK/LIGHT ----------
+# ---------- ESTILO ADAPTATIVO AUTOMÁTICO PARA LIGHT/DARK MODE ----------
 st.markdown("""
     <style>
     body {
@@ -54,6 +54,30 @@ st.markdown("""
         margin-top: 20px;
         transition: background-color 0.3s ease, border-color 0.3s ease;
     }
+
+    /* Ajustes para tema escuro via detecção do navegador/sistema */
+    @media (prefers-color-scheme: dark) {
+        body, .titulo-principal, .stSuccess, .manual-popup {
+            color: #f0f0f0 !important;
+        }
+        .titulo-principal {
+            background-color: #1c1c1c !important;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2) !important;
+        }
+        .manual-popup {
+            background-color: #3a3a3a !important;
+            border-left-color: #ffa726 !important;
+            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5) !important;
+        }
+        div.stDownloadButton > button, div.stFileUploader > div > button {
+            background-color: #ffa726 !important;
+            color: #000 !important;
+        }
+        div.stDownloadButton > button:hover, div.stFileUploader > div > button:hover {
+            background-color: #ffb74d !important;
+            color: #000 !important;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -66,8 +90,8 @@ st.markdown(
     <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
                 padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
         <strong>GERANDO A BASE (Processo para uso na Robbu):</strong><br>
-        1️⃣ No sistema <strong>Robbu</strong>, gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
-        2️⃣ Ainda no sistema <strong>Robbu</strong>, gere o relatório de <b>Contatos Fidelizados</b>.<br>
+        1️⃣ Na <strong>Robbu</strong>, gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
+        2️⃣ Ainda na <strong>Robbu</strong>, gere o relatório de <b>Contatos Fidelizados</b>.<br>
         3️⃣ Aqui no <strong>aplicativo de geração de base</strong>, faça o upload do arquivo de KPI no campo <em>"📂 Importar base KPI"</em>.<br>
         4️⃣ Faça também o upload do arquivo de Fidelizados no campo <em>"📂 Importar base FIDELIZADOS"</em>.<br>
         5️⃣ O sistema processará os dados e gerará a base final automaticamente, pronta para importação na Robbu.<br>
@@ -208,4 +232,3 @@ if file_kpi and file_fid:
             """,
             unsafe_allow_html=True
         )
-
