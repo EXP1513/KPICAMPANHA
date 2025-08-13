@@ -25,8 +25,24 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# ---------- TÍTULO ----------
 st.markdown("<div class='titulo-principal'>📢 Gera Campanha</div>", unsafe_allow_html=True)
 
+# ---------- MANUAL NA TELA ----------
+st.markdown(
+    """
+    <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
+                padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
+        <strong>GERANDO A BASE:</strong><br>
+        - Gere o relatório de KPI de Eventos, selecionando o período desejado.<br>
+        - Gere o relatório de Contatos Fidelizados.<br>
+        - Suba a base de KPI no campo de upload <em>"KPI"</em>.<br>
+        - Suba a base de Fidelizados no campo de upload <em>"Fidelizados"</em>.<br>
+        - Automaticamente, a base será gerada.
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
 
 # ---------- FUNÇÃO PARA LEITURA E FILTRO ----------
 def read_file(f):
@@ -40,15 +56,11 @@ def read_file(f):
             df = pd.read_csv(data_io, encoding="ISO-8859-1", sep=None, engine="python")
     else:
         df = pd.read_excel(data_io)
-
-    # 🔹 Filtro Carteiras já na importação
     col_carteiras = next((c for c in df.columns if str(c).strip().lower() == "carteiras"), None)
     if col_carteiras:
         valores_permitidos = ["SAC", "Distribuição Manual"]
         df = df[df[col_carteiras].astype(str).str.strip().isin(valores_permitidos)]
-
     return df
-
 
 # ---------- UPLOAD ----------
 file_kpi = st.file_uploader("📂 Importar base **KPI**", type=["xlsx", "csv"])
@@ -64,16 +76,13 @@ if file_kpi and file_fid:
     if not col_whatsapp_kpi or not col_whatsapp_fid:
         st.error("❌ Coluna 'WhatsApp Principal' não encontrada.")
     else:
-        # 🔹 Remove zero inicial da base KPI já no início
         df_kpi[col_whatsapp_kpi] = df_kpi[col_whatsapp_kpi].astype(str).str.strip()
         df_kpi[col_whatsapp_kpi] = df_kpi[col_whatsapp_kpi].apply(
             lambda x: re.sub(r'^0+', '', x) if re.match(r'^0', x) else x
         )
 
-        # ---------- PEGAR DATAS PARA O NOME DO ARQUIVO ----------
         nome_arquivo = "Abandono.csv"
         col_data_evento = next((c for c in df_kpi.columns if str(c).strip().lower() == "data evento"), None)
-
         if col_data_evento:
             try:
                 df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce', dayfirst=True)
@@ -88,14 +97,11 @@ if file_kpi and file_fid:
             except Exception as e:
                 st.warning(f"⚠️ Não foi possível processar as datas: {e}")
 
-        # ---------- FILTRAR E LIMPAR BASE ----------
         df_kpi = df_kpi[~df_kpi[col_whatsapp_kpi].isin(df_fid[col_whatsapp_fid])]
 
         col_obs = next((c for c in df_kpi.columns if str(c).strip().lower() == "observação"), None)
-
         filtro_medio = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio", case=False, na=False)]
         filtro_fundamental = df_kpi[df_kpi[col_obs].astype(str).str.contains("Fundamental", case=False, na=False)]
-
         base_pronta = pd.concat([filtro_medio, filtro_fundamental], ignore_index=True)
 
         col_carteiras = next((c for c in base_pronta.columns if str(c).strip().lower() == "carteiras"), None)
@@ -104,7 +110,6 @@ if file_kpi and file_fid:
             base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(termos_excluir)]
 
         col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
-
         if col_contato:
             def processar_contato(valor):
                 texto_original = str(valor).strip()
@@ -114,46 +119,38 @@ if file_kpi and file_fid:
                 if len(primeira_palavra) <= 3:
                     return "Candidato"
                 return primeira_palavra
-
             base_pronta[col_contato] = base_pronta[col_contato].apply(processar_contato)
 
         mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
         base_pronta = base_pronta.rename(columns=mapping)[["Nome", "Numero", "Tipo"]]
         base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
 
-        # ---------- MONTAR LAYOUT ----------
         layout_colunas = [
             "TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "MENSAGEM", "NOME_CLIENTE",
             "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
             "CORINGA4", "CORINGA5", "PRIORIDADE"
         ]
-
         base_importacao = pd.DataFrame(columns=layout_colunas)
         base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].values
         base_importacao["NOME_CLIENTE"] = base_pronta["Nome"].values
         base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
         base_importacao = base_importacao[layout_colunas]
 
-        # ---------- AJUSTE FINAL NOS NÚMEROS ----------
         def limpar_numero_final(num):
-            num_limpo = re.sub(r"\D", "", str(num))  # só dígitos
-            num_limpo = num_limpo.lstrip("0")        # remove zeros iniciais
-            return "55" + num_limpo                  # garante 55 no início
-
+            num_limpo = re.sub(r"\D", "", str(num))
+            num_limpo = num_limpo.lstrip("0")
+            return "55" + num_limpo
         base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(limpar_numero_final)
 
-        # ---------- SAÍDA ----------
         st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
         st.dataframe(base_importacao)
 
         output = BytesIO()
         base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
-
         st.download_button(
             label="⬇️ Baixar base de campanha (formato .csv)",
             data=output,
             file_name=nome_arquivo,
             mime="text/csv"
         )
-
