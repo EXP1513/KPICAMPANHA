@@ -198,6 +198,19 @@ if file_kpi and file_fid:
             return "55" + num_limpo
         base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(limpar_numero_final)
 
+        st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
+        st.dataframe(base_importacao)
+
+        output = BytesIO()
+        base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
+        output.seek(0)
+        st.download_button(
+            label="⬇️ Baixar base de campanha (formato .csv)",
+            data=output,
+            file_name=nome_arquivo,
+            mime="text/csv"
+        )
+
         # ---------- MANUAL DE IMPORTAÇÃO NA ROBBU ----------
         st.markdown(
             f"""
@@ -219,27 +232,6 @@ if file_kpi and file_fid:
             """,
             unsafe_allow_html=True
         )
-
-        st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
-        st.dataframe(base_importacao)
- st.download_button(
-            label="⬇️ Baixar base de campanha (formato .csv)",
-            data=output,
-            file_name=nome_arquivo,
-            mime="text/csv"
-        )
-
-        output = BytesIO()
-        base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
-        output.seek(0)
-        st.download_button(
-            label="⬇️ Baixar base de campanha (formato .csv)",
-            data=output,
-            file_name=nome_arquivo,
-            mime="text/csv"
-        )
-
-
 
 
 
