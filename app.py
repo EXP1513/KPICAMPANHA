@@ -3,98 +3,109 @@ import pandas as pd
 from io import BytesIO
 import re
 
-st.set_page_config(page_title="Gera Campanha", page_icon="🚀🇧🇷🚀", layout="centered")
+st.set_page_config(page_title="Gera Campanha", page_icon="logo_eja.png", layout="centered")
 
-# ---------- ESTILO ADAPTATIVO AUTOMÁTICO PARA LIGHT/DARK MODE ----------
+# ---------- ESTILO INSPIRADO NO SITE EJA BRASIL + DARK MODE ADAPTATIVO ----------
 st.markdown("""
     <style>
     body {
         font-family: 'Segoe UI', sans-serif;
-        background-color: var(--background-color, #f4f6f8);
-        color: var(--text-color, #000);
-        transition: background-color 0.3s ease, color 0.3s ease;
+        background-color: #f4f6f8;
+        color: #232323;
+    }
+    .top-logo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        margin-bottom: 10px;
     }
     .titulo-principal {
-        background-color: var(--primary-color, #004aad);
-        color: var(--on-primary-color, #fff);
-        padding: 18px;
-        border-radius: 8px;
+        background-color: #004aad;
+        color: #fff;
+        padding: 10px 25px;
+        border-radius: 12px;
         text-align: center;
         font-size: 2em;
         font-weight: bold;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        margin-bottom: 20px;
-        transition: background-color 0.3s ease, color 0.3s ease;
+        margin-bottom: 24px;
+        margin-top: 0;
     }
     div.stDownloadButton > button, div.stFileUploader > div > button {
-        background-color: #ffb703cc; /* Amarelo com opacidade */
-        color: black;
+        background-color: #FFE066;
+        color: #212529;
         font-weight: bold;
         border-radius: 5px;
-        padding: 8px 16px;
+        padding: 8px 24px;
         border: none;
-        transition: background-color 0.3s ease, color 0.3s ease;
+        margin-bottom: 12px;
     }
     div.stDownloadButton > button:hover, div.stFileUploader > div > button:hover {
-        background-color: #fb850099; /* Hover amarelo com transparência */
-        color: white;
+        background-color: #FFD700;
+        color: #004aad;
     }
-    .stSuccess {
-        background-color: var(--success-bg, #e6f4ea);
-        color: var(--success-text, #000);
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
+    .stSuccess {background-color: #e0f7fa;} /* Azul leve */
     .manual-popup {
-        background-color: var(--warning-bg, #fff3cdcc);
-        border-left: 6px solid #ff9800cc;
-        padding: 15px;
-        border-radius: 6px;
-        font-size: 1.05em;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        background-color: #fffbea;
+        border-left: 6px solid #ffb703;
+        padding: 16px;
+        border-radius: 8px;
+        font-size: 1.09em;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.04);
         margin-top: 20px;
-        transition: background-color 0.3s ease, border-color 0.3s ease;
+        color: #212529;
     }
-
-    /* Ajustes para tema escuro via detecção do navegador/sistema */
+    /* DARK MODE */
     @media (prefers-color-scheme: dark) {
-        body, .titulo-principal, .stSuccess, .manual-popup {
-            color: #f0f0f0 !important;
+        body, .titulo-principal, .manual-popup, .stSuccess {
+            background-color: #121212 !important;
+            color: #f4f6f8 !important;
         }
         .titulo-principal {
-            background-color: #1c1c1c !important;
-            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2) !important;
+            background-color: #244183 !important;
+            color: #fff !important;
         }
         .manual-popup {
-            background-color: #3a3a3a !important;
-            border-left-color: #ffa726 !important;
-            box-shadow: 0 4px 8px rgba(255, 165, 0, 0.5) !important;
+            background-color: #232323 !important;
+            color: #ffe066 !important;
+            border-left-color: #fb8500 !important;
         }
-        div.stDownloadButton > button, div.stFileUploader > div > button {
-            background-color: #ffa726 !important;
-            color: #000 !important;
+        div.stDownloadButton > button,
+        div.stFileUploader > div > button {
+            background-color: #ffe066 !important;
+            color: #212529 !important;
         }
-        div.stDownloadButton > button:hover, div.stFileUploader > div > button:hover {
-            background-color: #ffb74d !important;
-            color: #000 !important;
+        div.stDownloadButton > button:hover,
+        div.stFileUploader > div > button:hover {
+            background-color: #fee298 !important;
+            color: #004aad !important;
         }
     }
     </style>
 """, unsafe_allow_html=True)
 
-# ---------- TÍTULO ----------
-st.markdown("<div class='titulo-principal'>🚀🇧🇷🚀 Gera Campanha</div>", unsafe_allow_html=True)
+# ---------- LOGO NO TOPO (substitui ícones) ----------
+st.markdown(
+    """<div class='top-logo'>
+        <img src='data:image/png;base64,{}' alt='Logo EJA Brasil' style='height:76px;'>
+    </div>""".format(
+        st.image("logo_eja.png", width=350, output_format="auto") or ""
+    ), unsafe_allow_html=True
+)
 
-# ---------- MANUAL NA TELA PRINCIPAL ----------
+st.markdown("<div class='titulo-principal'>Gera Campanha</div>", unsafe_allow_html=True)
+
+# ---------- MANUAL NA TELA PRINCIPAL, layout e cor inspirados no site ----------
 st.markdown(
     """
-    <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
-                padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
+    <div style='background-color:#f4f5fd; border-left: 6px solid #004aad;
+                padding: 16px; margin-bottom: 24px; border-radius: 9px; color:#212529;'>
         <strong>GERANDO A BASE (Processo para uso na Robbu):</strong><br>
-        1️⃣ Na <strong>Robbu</strong>, gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
-        2️⃣ Ainda na <strong>Robbu</strong>, gere o relatório de <b>Contatos Fidelizados</b>.<br>
-        3️⃣ Aqui no <strong>aplicativo de geração de base</strong>, faça o upload do arquivo de KPI no campo <em>"📂 Importar base KPI"</em>.<br>
-        4️⃣ Faça também o upload do arquivo de Fidelizados no campo <em>"📂 Importar base FIDELIZADOS"</em>.<br>
-        5️⃣ O sistema processará os dados e gerará a base final automaticamente, pronta para importação na Robbu.<br>
+        <b>1. No sistema Robbu:</b> gere o relatório de <b>KPI de Eventos</b> para o período desejado.<br>
+        <b>2. No sistema Robbu:</b> gere o relatório de <b>Contatos Fidelizados</b>.<br>
+        <b>3. Neste aplicativo:</b> faça o upload do arquivo de KPI em <em>"Importar base KPI"</em>.<br>
+        <b>4. Neste aplicativo:</b> faça o upload do arquivo de Fidelizados em <em>"Importar base FIDELIZADOS"</em>.<br>
+        <b>5. A base pronta será gerada automaticamente para importação na Robbu.</b>
     </div>
     """, 
     unsafe_allow_html=True
