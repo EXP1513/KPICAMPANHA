@@ -89,7 +89,7 @@ st.markdown(
     """
     <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
                 padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
-        <strong>PARA GERAR A BASE CAMAPANHA É NECESSARIO IR ANTES NA ROBBU E...</strong><br>
+        <strong>PARA GERAR A BASE CAMPANHA É NECESSARIO IR ANTES NA ROBBU E...</strong><br>
         1️⃣ Gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
         2️⃣ Ainda na <strong>Robbu</strong>, gere o relatório de <b>Contatos Fidelizados</b>.<br>
         3️⃣ Aqui no <strong>aplicativo de geração de base</strong>, faça o upload do arquivo de KPI no campo <em>"📂 Importar base KPI"</em>.<br>
@@ -232,6 +232,7 @@ if file_kpi and file_fid:
             """,
             unsafe_allow_html=True
         )
+
 
 
 
