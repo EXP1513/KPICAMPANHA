@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 import re
 
-st.set_page_config(page_title="Gera Campanha", page_icon="🚀Gera Campanha🚀", layout="centered")
+st.set_page_config(page_title="Gera Campanha", page_icon="🚀"Gera Campanha"🚀", layout="centered")
 
 # ---------- ESTILO ADAPTATIVO AUTOMÁTICO PARA LIGHT/DARK MODE ----------
 st.markdown("""
@@ -235,5 +235,6 @@ if file_kpi and file_fid:
         # Prévia da Base
         st.markdown("## Prévia da Base")
         st.dataframe(base_importacao)
+
 
 
