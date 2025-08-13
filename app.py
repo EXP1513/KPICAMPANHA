@@ -27,18 +27,28 @@ st.markdown("""
 
 st.markdown("<div class='titulo-principal'>📢 Gera Campanha</div>", unsafe_allow_html=True)
 
-# ---------- FUNÇÃO PARA LEITURA ----------
+
+# ---------- FUNÇÃO PARA LEITURA E FILTRO ----------
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
     if f.name.lower().endswith(".csv"):
         try:
-            return pd.read_csv(data_io, encoding="utf-8", sep=None, engine="python")
+            df = pd.read_csv(data_io, encoding="utf-8", sep=None, engine="python")
         except UnicodeDecodeError:
             data_io.seek(0)
-            return pd.read_csv(data_io, encoding="ISO-8859-1", sep=None, engine="python")
+            df = pd.read_csv(data_io, encoding="ISO-8859-1", sep=None, engine="python")
     else:
-        return pd.read_excel(data_io)
+        df = pd.read_excel(data_io)
+
+    # 🔹 Filtro Carteiras já na importação
+    col_carteiras = next((c for c in df.columns if str(c).strip().lower() == "carteiras"), None)
+    if col_carteiras:
+        valores_permitidos = ["SAC", "Distribuição Manual"]
+        df = df[df[col_carteiras].astype(str).str.strip().isin(valores_permitidos)]
+
+    return df
+
 
 # ---------- UPLOAD ----------
 file_kpi = st.file_uploader("📂 Importar base **KPI**", type=["xlsx", "csv"])
@@ -63,7 +73,7 @@ if file_kpi and file_fid:
         # ---------- PEGAR DATAS PARA O NOME DO ARQUIVO ----------
         nome_arquivo = "Abandono.csv"
         col_data_evento = next((c for c in df_kpi.columns if str(c).strip().lower() == "data evento"), None)
-        
+
         if col_data_evento:
             try:
                 df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce', dayfirst=True)
@@ -82,8 +92,10 @@ if file_kpi and file_fid:
         df_kpi = df_kpi[~df_kpi[col_whatsapp_kpi].isin(df_fid[col_whatsapp_fid])]
 
         col_obs = next((c for c in df_kpi.columns if str(c).strip().lower() == "observação"), None)
+
         filtro_medio = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio", case=False, na=False)]
         filtro_fundamental = df_kpi[df_kpi[col_obs].astype(str).str.contains("Fundamental", case=False, na=False)]
+
         base_pronta = pd.concat([filtro_medio, filtro_fundamental], ignore_index=True)
 
         col_carteiras = next((c for c in base_pronta.columns if str(c).strip().lower() == "carteiras"), None)
@@ -92,6 +104,7 @@ if file_kpi and file_fid:
             base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(termos_excluir)]
 
         col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
+
         if col_contato:
             def processar_contato(valor):
                 texto_original = str(valor).strip()
@@ -101,6 +114,7 @@ if file_kpi and file_fid:
                 if len(primeira_palavra) <= 3:
                     return "Candidato"
                 return primeira_palavra
+
             base_pronta[col_contato] = base_pronta[col_contato].apply(processar_contato)
 
         mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
@@ -113,7 +127,7 @@ if file_kpi and file_fid:
             "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
             "CORINGA4", "CORINGA5", "PRIORIDADE"
         ]
-        
+
         base_importacao = pd.DataFrame(columns=layout_colunas)
         base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].values
         base_importacao["NOME_CLIENTE"] = base_pronta["Nome"].values
@@ -135,10 +149,11 @@ if file_kpi and file_fid:
         output = BytesIO()
         base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
-        
+
         st.download_button(
             label="⬇️ Baixar base de campanha (formato .csv)",
             data=output,
             file_name=nome_arquivo,
             mime="text/csv"
         )
+
