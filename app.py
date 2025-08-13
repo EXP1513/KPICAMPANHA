@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 import re
 
-st.set_page_config(page_title="Gera Campanha", page_icon="🚀", layout="centered")
+st.set_page_config(page_title="Gera Campanha", page_icon="🚀🇧🇷🚀", layout="centered")
 
 # ---------- ESTILO ----------
 st.markdown("""
@@ -22,23 +22,32 @@ st.markdown("""
         background-color: #fb8500; color: white;
     }
     .stSuccess {background-color: #e6f4ea;}
+    .manual-popup {
+        background-color: #fff3cd;
+        border-left: 6px solid #ff9800;
+        padding: 15px;
+        border-radius: 6px;
+        font-size: 1.05em;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        margin-top: 20px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # ---------- TÍTULO ----------
-st.markdown("<div class='titulo-principal'>📢 Gera Campanha</div>", unsafe_allow_html=True)
+st.markdown("<div class='titulo-principal'>🚀🇧🇷🚀 Gera Campanha</div>", unsafe_allow_html=True)
 
-# ---------- MANUAL NA TELA ----------
+# ---------- MANUAL NA TELA PRINCIPAL ----------
 st.markdown(
     """
     <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
                 padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
-        <strong>GERANDO A BASE:</strong><br>
-        - Gere o relatório de KPI de Eventos, selecionando o período desejado.<br>
-        - Gere o relatório de Contatos Fidelizados.<br>
-        - Suba a base de KPI no campo de upload <em>"KPI"</em>.<br>
-        - Suba a base de Fidelizados no campo de upload <em>"Fidelizados"</em>.<br>
-        - Automaticamente, a base será gerada.
+        <strong>GERANDO A BASE (Processo para uso na Robbu):</strong><br>
+        1️⃣ No sistema <strong>Robbu</strong>, gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
+        2️⃣ Ainda no sistema <strong>Robbu</strong>, gere o relatório de <b>Contatos Fidelizados</b>.<br>
+        3️⃣ Aqui no <strong>aplicativo de geração de base</strong>, faça o upload do arquivo de KPI no campo <em>"📂 Importar base KPI"</em>.<br>
+        4️⃣ Faça também o upload do arquivo de Fidelizados no campo <em>"📂 Importar base FIDELIZADOS"</em>.<br>
+        5️⃣ O sistema processará os dados e gerará a base final automaticamente, pronta para importação na Robbu.<br>
     </div>
     """, 
     unsafe_allow_html=True
@@ -153,4 +162,26 @@ if file_kpi and file_fid:
             data=output,
             file_name=nome_arquivo,
             mime="text/csv"
+        )
+
+        # ---------- MANUAL DE IMPORTAÇÃO NA ROBBU ----------
+        st.markdown(
+            f"""
+            <div class='manual-popup'>
+                <h4>📤 Próximos passos – Importar na Robbu</h4>
+                <p><strong>Agora:</strong> baixe o arquivo gerado acima (<em>{nome_arquivo}</em>).</p>
+                <ol>
+                    <li>No sistema <strong>Robbu</strong>, vá na opção <strong>"Público"</strong> e clique em <strong>"Importar Público"</strong>.</li>
+                    <li>Na <strong>descrição</strong>, escreva <b>"Abandono"</b> junto com a data do arquivo 
+                        (o arquivo já vem com a data correta no nome).</li>
+                    <li>Selecione o segmento <strong>"Distribuição Manual"</strong>.</li>
+                    <li>Faça o upload do arquivo gerado.</li>
+                    <li>Marque a opção: <strong>"Minha empresa possui autorização para processamento e comunicação com o público"</strong>.</li>
+                    <li>Selecione o tipo de autorização como <strong>"Consentimento"</strong>.</li>
+                    <li>Marque <strong>"Manter apenas neste segmento"</strong>.</li>
+                    <li>Clique em <strong>Importar</strong>.</li>
+                </ol>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
