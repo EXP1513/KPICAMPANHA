@@ -27,7 +27,7 @@ st.markdown("""
         transition: background-color 0.3s ease, color 0.3s ease;
     }
     div.stDownloadButton > button, div.stFileUploader > div > button {
-        background-color: #ffb703cc; /* Amarelo com opacidade */
+        background-color: #ffb703cc;
         color: black;
         font-weight: bold;
         border-radius: 5px;
@@ -36,7 +36,7 @@ st.markdown("""
         transition: background-color 0.3s ease, color 0.3s ease;
     }
     div.stDownloadButton > button:hover, div.stFileUploader > div > button:hover {
-        background-color: #fb850099; /* Hover amarelo com transparência */
+        background-color: #fb850099;
         color: white;
     }
     .stSuccess {
@@ -54,8 +54,6 @@ st.markdown("""
         margin-top: 20px;
         transition: background-color 0.3s ease, border-color 0.3s ease;
     }
-
-    /* Ajustes para tema escuro via detecção do navegador/sistema */
     @media (prefers-color-scheme: dark) {
         body, .titulo-principal, .stSuccess, .manual-popup {
             color: #f0f0f0 !important;
@@ -89,7 +87,7 @@ st.markdown(
     """
     <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
                 padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
-        <strong>PARA GERAR A BASE CAMPANHA É NECESSARIO IR ANTES NA ROBBU E...</strong><br>
+        <strong>PARA GERAR A BASE CAMPANHA É NECESSÁRIO IR ANTES NA ROBBU E...</strong><br>
         1️⃣ Gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
         2️⃣ Ainda na <strong>Robbu</strong>, gere o relatório de <b>Contatos Fidelizados</b>.<br>
         3️⃣ Aqui no <strong>aplicativo de geração de base</strong>, faça o upload do arquivo de KPI no campo <em>"📂 Importar base KPI"</em>.<br>
@@ -196,11 +194,13 @@ if file_kpi and file_fid:
             num_limpo = re.sub(r"\D", "", str(num))
             num_limpo = num_limpo.lstrip("0")
             return "55" + num_limpo
+
         base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(limpar_numero_final)
 
+        # Mensagem de sucesso
         st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
-        st.dataframe(base_importacao)
 
+        # Botão de download
         output = BytesIO()
         base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
@@ -211,7 +211,7 @@ if file_kpi and file_fid:
             mime="text/csv"
         )
 
-        # ---------- MANUAL DE IMPORTAÇÃO NA ROBBU ----------
+        # Manual logo abaixo da mensagem
         st.markdown(
             f"""
             <div class='manual-popup'>
@@ -219,22 +219,19 @@ if file_kpi and file_fid:
                 <p><strong>Agora:</strong> baixe o arquivo gerado acima (<em>{nome_arquivo}</em>).</p>
                 <ol>
                     <li>Na <strong>Robbu</strong>, vá na opção <strong>"Público"</strong> e clique em <strong>"Importar Público"</strong>.</li>
-                    <li>Na <strong>descrição</strong>, escreva <b>"Abandono"</b> junto com a data do arquivo 
-                        (o arquivo já vem com a data correta no nome).</li>
+                    <li>Na <strong>descrição</strong>, escreva <b>"Abandono"</b> junto com a data do arquivo.</li>
                     <li>Selecione o segmento <strong>"Distribuição Manual"</strong>.</li>
                     <li>Faça o upload do arquivo gerado.</li>
                     <li>Marque a opção: <strong>"Minha empresa possui autorização para processamento e comunicação com o público"</strong>.</li>
                     <li>Selecione o tipo de autorização como <strong>"Consentimento"</strong>.</li>
                     <li>Marque <strong>"Manter apenas neste segmento"</strong>.</li>
-                    <li>Clique em <strong>Importar e aguarde até a confirmação de Importação Concluida com Sucesso</strong>.</li>
+                    <li>Clique em <strong>Importar</strong> e aguarde até a confirmação de sucesso.</li>
                 </ol>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-
-
-
-
-
+        # POR DENTRO DA BASE no final
+        st.markdown("## POR DENTRO DA BASE")
+        st.dataframe(base_importacao)
