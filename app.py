@@ -222,6 +222,12 @@ if file_kpi and file_fid:
 
         st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
         st.dataframe(base_importacao)
+ st.download_button(
+            label="⬇️ Baixar base de campanha (formato .csv)",
+            data=output,
+            file_name=nome_arquivo,
+            mime="text/csv"
+        )
 
         output = BytesIO()
         base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
@@ -232,6 +238,7 @@ if file_kpi and file_fid:
             file_name=nome_arquivo,
             mime="text/csv"
         )
+
 
 
 
