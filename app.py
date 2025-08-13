@@ -89,9 +89,9 @@ st.markdown(
     """
     <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
                 padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
-        <strong>GERANDO A BASE (Processo para uso na Robbu):</strong><br>
-        1️⃣ No sistema <strong>Robbu</strong>, gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
-        2️⃣ Ainda no sistema <strong>Robbu</strong>, gere o relatório de <b>Contatos Fidelizados</b>.<br>
+        <strong>PARA GERAR A BASE ANTES VÁ ATÉ A ROBBU A BASE :</strong><br>
+        1️⃣ Na <strong>Robbu</strong>, gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
+        2️⃣ Ainda na <strong>Robbu</strong>, gere o relatório de <b>Contatos Fidelizados</b>.<br>
         3️⃣ Aqui no <strong>aplicativo de geração de base</strong>, faça o upload do arquivo de KPI no campo <em>"📂 Importar base KPI"</em>.<br>
         4️⃣ Faça também o upload do arquivo de Fidelizados no campo <em>"📂 Importar base FIDELIZADOS"</em>.<br>
         5️⃣ O sistema processará os dados e gerará a base final automaticamente, pronta para importação na Robbu.<br>
@@ -232,4 +232,5 @@ if file_kpi and file_fid:
             """,
             unsafe_allow_html=True
         )
+
 
