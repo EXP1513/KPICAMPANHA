@@ -205,7 +205,7 @@ if file_kpi and file_fid:
         base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
         st.download_button(
-            label="⬇️ Baixar base de campanha (formato .csv)",
+            label="⬇️ DOWNLOAD CAMPANHA (formato .csv)",
             data=output,
             file_name=nome_arquivo,
             mime="text/csv"
@@ -232,6 +232,7 @@ if file_kpi and file_fid:
             unsafe_allow_html=True
         )
 
-        # POR DENTRO DA BASE no final
-        st.markdown("## POR DENTRO DA BASE")
+        # Prévia da Base
+        st.markdown("## Prévia da Base")
         st.dataframe(base_importacao)
+
