@@ -142,7 +142,7 @@ def importar_excel_tratamento_nao_pagos(df):
 def gerar_nome_arquivo_carrinho():
     hoje = datetime.now()
     dia_semana = hoje.weekday()  # segunda=0
-    prefixo = "Não pago site e carrinho até"
+    prefixo = "Carinho_Nãopagos"
     if dia_semana == 0:  # segunda-feira
         sexta = hoje - timedelta(days=3)
         domingo = hoje - timedelta(days=1)
@@ -170,12 +170,6 @@ def gerar_nome_arquivo_abandono(df_kpi, col_data_evento):
 # ===== Aba Abandono =====
 def aba_abandono():
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <div class='manual-inicio'>
-        <strong>Necessário:</strong> KPI de Eventos + Contatos Fidelizados<br>
-        Após importar, a base será processada e disponibilizada.
-    </div>
-    """, unsafe_allow_html=True)
     file_kpi = st.file_uploader("📂 Base KPI", type=["xlsx","csv"], key="kpi_file")
     file_fid = st.file_uploader("📂 Base Fidelizados", type=["xlsx","csv"], key="fid_file")
 
@@ -196,7 +190,6 @@ def aba_abandono():
 
         df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].astype(str).str.strip()
         df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].apply(lambda x: re.sub(r'^0+', '', x))
-
         df_kpi = df_kpi[~df_kpi[col_wpp_kpi].isin(df_fid[col_wpp_fid])]
         df_kpi = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio|Fundamental", case=False, na=False)]
         if col_carteiras:
@@ -214,7 +207,10 @@ def aba_abandono():
         base_export["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(tratar_numero_telefone)
         base_export["NOME_CLIENTE"] = base_pronta["Nome"]
         base_export["TIPO_DE_REGISTRO"] = "TELEFONE"
+
+        # Removendo duplicatas e linhas vazias
         base_export = base_export.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
+        base_export = base_export[base_export["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
         base_export = base_export[layout]
 
         nome_arquivo = gerar_nome_arquivo_abandono(df_kpi, col_data_evento)
@@ -255,7 +251,10 @@ def aba_carrinho():
         df_saida["TIPO_DE_REGISTRO"] = df_saida["VALOR_DO_REGISTRO"].apply(
             lambda x: "TELEFONE" if str(x).strip() != "" else ""
         )
+
+        # Removendo duplicatas e linhas vazias
         df_saida = df_saida.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
+        df_saida = df_saida[df_saida["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
 
         qtd_total_final = len(df_saida)
         nome_arquivo = gerar_nome_arquivo_carrinho()
