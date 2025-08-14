@@ -205,7 +205,7 @@ def aba_abandono():
                   "CORINGA4","CORINGA5","PRIORIDADE"]
         base_export = pd.DataFrame(columns=layout)
         base_export["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(tratar_numero_telefone)
-        base_export["NOME_CLIENTE"] = base_pronta["Nome"]
+        base_export["NOME_CLIENTE"] = base_pronta["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         base_export["TIPO_DE_REGISTRO"] = "TELEFONE"
 
         # Removendo duplicatas e linhas vazias
@@ -247,7 +247,7 @@ def aba_carrinho():
                        "CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         df_saida = pd.DataFrame(columns=layout_cols)
         df_saida["VALOR_DO_REGISTRO"] = df_unificado["Numero"]
-        df_saida["NOME_CLIENTE"] = df_unificado["Nome"]
+        df_saida["NOME_CLIENTE"] = df_unificado["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         df_saida["TIPO_DE_REGISTRO"] = df_saida["VALOR_DO_REGISTRO"].apply(
             lambda x: "TELEFONE" if str(x).strip() != "" else ""
         )
