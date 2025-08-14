@@ -193,24 +193,23 @@ def aba_abandono():
             df_kpi = df_kpi[~df_kpi[col_carteiras].isin(["SAC - Pós Venda", "Secretaria"])]
         df_kpi[col_contato] = df_kpi[col_contato].apply(processar_nome_abandono)
 
-        base_pronta = df_kpi.rename(columns={col_contato:"Nome", col_wpp_kpi:"Numero"}).drop_duplicates(subset=["Numero"], keep="first")
+        base_pronta = df_kpi.rename(columns={col_contato: "Nome", col_wpp_kpi: "Numero"}).drop_duplicates(subset=["Numero"], keep="first")
 
-        # Layout final
         layout = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         base_export = pd.DataFrame(columns=layout)
         base_export["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(tratar_numero_telefone)
         base_export["NOME_CLIENTE"] = base_pronta["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         base_export["TIPO_DE_REGISTRO"] = "TELEFONE"
 
-        # Remover contato bloqueado
-        email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com".lower()
-        numero_bloqueado = re.sub(r'\D', '', "(21) 96999-9549")
+        # Bloqueio de contatos específicos
+        email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com"
+        numeros_bloqueados = {re.sub(r'\D', '', "(21) 96999-9549"), "5521969999549"}
         base_export = base_export[
-            ~(base_export["VALOR_DO_REGISTRO"] == numero_bloqueado) &
-            ~(base_export["NOME_CLIENTE"].str.lower() == email_bloqueado)
+            ~(base_export["VALOR_DO_REGISTRO"].isin(numeros_bloqueados)) &
+            ~(base_export["NOME_CLIENTE"].str.lower() == email_bloqueado.lower())
         ]
 
-        # Remover duplicatas e vazios
+        # Remove duplicatas e vazios
         base_export = base_export.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         base_export = base_export[base_export["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
 
@@ -237,8 +236,8 @@ def aba_carrinho():
         df_nao_pagos = importar_excel_tratamento_nao_pagos(read_file(file_nao_pagos))
         df_pedidos = read_file(file_pedidos)
 
-        # Unifica bases
         df_unificado = pd.concat([df_carrinho, df_nao_pagos], ignore_index=True)
+
         if 'E-mail (cobrança)' in df_pedidos.columns:
             emails_unif = df_unificado['e-mail'].str.strip().str.lower()
             emails_ped = df_pedidos['E-mail (cobrança)'].astype(str).str.strip().str.lower()
@@ -246,22 +245,21 @@ def aba_carrinho():
 
         df_unificado = df_unificado[['Nome','Numero']]
 
-        # Layout final
         layout_cols = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         df_saida = pd.DataFrame(columns=layout_cols)
         df_saida["VALOR_DO_REGISTRO"] = df_unificado["Numero"]
         df_saida["NOME_CLIENTE"] = df_unificado["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         df_saida["TIPO_DE_REGISTRO"] = df_saida["VALOR_DO_REGISTRO"].apply(lambda x: "TELEFONE" if str(x).strip() != "" else "")
 
-        # Remover contato bloqueado
-        email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com".lower()
-        numero_bloqueado = re.sub(r'\D', '', "(21) 96999-9549")
+        # Bloqueio de contatos específicos
+        email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com"
+        numeros_bloqueados = {re.sub(r'\D', '', "(21) 96999-9549"), "5521969999549"}
         df_saida = df_saida[
-            ~(df_saida["VALOR_DO_REGISTRO"] == numero_bloqueado) &
-            ~(df_saida["NOME_CLIENTE"].str.lower() == email_bloqueado)
+            ~(df_saida["VALOR_DO_REGISTRO"].isin(numeros_bloqueados)) &
+            ~(df_saida["NOME_CLIENTE"].str.lower() == email_bloqueado.lower())
         ]
 
-        # Remover duplicatas e vazios
+        # Remove duplicatas e vazios
         df_saida = df_saida.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         df_saida = df_saida[df_saida["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
 
