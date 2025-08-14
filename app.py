@@ -88,6 +88,14 @@ def identificar_base_kpi(df):
 def identificar_base_fidelizados(df):
     return any(str(c).strip().lower() in ["nome cliente","contato","nome"] for c in df.columns)
 
+# ---------- FUNÇÃO PARA TRATAR NOMES ----------
+def processar_nome(valor):
+    texto_original = str(valor).strip()
+    nome_limpo = re.sub(r'[^a-zA-ZÀ-ÿ0-9]', '', texto_original)  # remove tudo que não é letra ou número
+    if not nome_limpo:
+        return "Candidato"
+    return nome_limpo.capitalize()
+
 # ---------- UPLOAD ----------
 file_kpi = st.file_uploader("📂 Importar base **KPI**", type=["xlsx", "csv"])
 file_fid = st.file_uploader("📂 Importar base **FIDELIZADOS**", type=["xlsx", "csv"])
@@ -151,79 +159,13 @@ if file_kpi and file_fid:
 
             col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
             if col_contato:
-                def processar_contato(valor):
-                    texto_original = str(valor).strip()
-                    if not texto_original or texto_original.lower() == "nan":
-                        return "Candidato"
-                    primeira_palavra = texto_original.split(" ")[0].capitalize()
-                    if len(primeira_palavra) <= 3:
-                        return "Candidato"
-                    return primeira_palavra
-                base_pronta[col_contato] = base_pronta[col_contato].apply(processar_contato)
+                base_pronta[col_contato] = base_pronta[col_contato].apply(processar_nome)
 
             mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
             base_pronta = base_pronta.rename(columns=mapping)[["Nome", "Numero", "Tipo"]]
             base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
 
+            # Layout final para importação
             layout_colunas = [
-                "TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "MENSAGEM", "NOME_CLIENTE",
-                "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
-                "CORINGA4", "CORINGA5", "PRIORIDADE"
-            ]
-            base_importacao = pd.DataFrame(columns=layout_colunas)
-            base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].values
-            base_importacao["NOME_CLIENTE"] = base_pronta["Nome"].values
-            base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
-            base_importacao = base_importacao[layout_colunas]
-
-            def limpar_numero_final(num):
-                num_limpo = re.sub(r"\D", "", str(num))
-                num_limpo = num_limpo.lstrip("0")
-                return "55" + num_limpo
-
-            base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(limpar_numero_final)
-
-            # Mensagem de sucesso
-            st.success(f"✅ Base de campanha gerada para importação! {len(base_importacao)} registros.")
-
-            # Botão de download
-            output = BytesIO()
-            base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
-            output.seek(0)
-            st.download_button(
-                label="⬇️ DOWNLOAD CAMPANHA (formato .csv)",
-                data=output,
-                file_name=nome_arquivo,
-                mime="text/csv"
-            )
-
-            # Manual de importação
-            st.markdown(
-                f"""
-                <div class='manual-popup'>
-                    <h4>📤 Próximos passos – Importar na Robbu</h4>
-                    <p><strong>Agora:</strong> baixe o arquivo gerado acima (<em>{nome_arquivo}</em>).</p>
-                    <ol>
-                        <li>Na <strong>Robbu</strong>, vá na opção <strong>"Público"</strong> e clique em <strong>"Importar Público"</strong>.</li>
-                        <li>Na <strong>descrição</strong>, escreva <b>"Abandono"</b> junto com a data do arquivo.</li>
-                        <li>Selecione o segmento <strong>"Distribuição Manual"</strong>.</li>
-                        <li>Faça o upload do arquivo gerado.</li>
-                        <li>Marque a opção: <strong>"Minha empresa possui autorização para processamento e comunicação com o público"</strong>.</li>
-                        <li>Selecione o tipo de autorização como <strong>"Consentimento"</strong>.</li>
-                        <li>Marque <strong>"Manter apenas neste segmento"</strong>.</li>
-                        <li>Clique em <strong>Importar</strong> e aguarde a confirmação de sucesso.</li>
-                    </ol>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            # Visualização final
-            st.markdown("## POR DENTRO DA BASE")
-            st.dataframe(base_importacao)
-
-
-
-
-
+                "TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "
 
