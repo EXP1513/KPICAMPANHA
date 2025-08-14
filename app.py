@@ -22,7 +22,7 @@ section[data-testid="stSidebar"] { background-color: #004aad !important; color: 
 """, unsafe_allow_html=True)
 
 st.sidebar.title("📋 Selecione o tipo de campanha")
-opcao = st.sidebar.radio("", ["🏚️ Abandono", "🛒👋 Carrinho Abandonado"])
+opcao = st.sidebar.radio("", ["🏚👋 Abandono", "🛒👋 Carrinho Abandonado"])
 
 def read_file(f):
     bytes_data = f.read()
@@ -174,3 +174,4 @@ elif opcao == "🛒👋 Carrinho Abandonado":
             🚧 Em construção... Em breve será possível gerar a base de Carrinho Abandonado.
         </div>
     """, unsafe_allow_html=True)
+
