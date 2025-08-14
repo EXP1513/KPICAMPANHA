@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 import re
 
-st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
+st.set_page_config(page_title="Gera Campanha", layout="centered")
 
 # ---------- CSS e HTML: gradiente igual ao layout do anexo ----------
 st.markdown("""
@@ -220,3 +220,4 @@ elif opcao == "🛒 Carrinho Abandonado":
         """,
         unsafe_allow_html=True
     )
+
