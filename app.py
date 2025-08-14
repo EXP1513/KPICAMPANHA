@@ -39,19 +39,19 @@ opcao = st.sidebar.radio("", ["❌👋 Abandono", "🛒👋 Carrinho Abandonado"
 # -------------------- Funções Auxiliares --------------------
 def tratar_nome(nome, numero):
     primeiro_nome = str(nome).strip().split(' ')[0]
-    nome_letras = re.sub(r'[^a-zA-ZÀ-ÿ]', '', primeiro_nome)
-    if len(nome_letras) <= 3 and str(numero).strip():
+    nome_limpos = re.sub(r'[^a-zA-ZÀ-ÿ]', '', primeiro_nome)
+    if len(nome_limpos) <= 3 and str(numero).strip():
         return "Candidato"
-    if not nome_letras:
+    if not nome_limpos:
         return "Candidato"
-    return nome_letras.title()
+    return nome_limpos.title()
 
 def tratar_numero(numero):
-    num = re.sub(r"\D", "", str(numero))
+    num = re.sub(r"\\D", "", str(numero))
     return "55" + num.lstrip("0") if num else ""
 
-def localizar_coluna(df, nomes_possiveis):
-    return next((c for c in df.columns if str(c).strip().lower() in [n.lower() for n in nomes_possiveis]), None)
+def tratar_email(email):
+    return str(email).strip().lower()
 
 def exportar_layout_robbu(df, col_nome="nome", col_numero="Numero"):
     layout_colunas = [
@@ -64,6 +64,9 @@ def exportar_layout_robbu(df, col_nome="nome", col_numero="Numero"):
     export_df["NOME_CLIENTE"] = df[col_nome]
     export_df["TIPO_DE_REGISTRO"] = "TELEFONE"
     return export_df[layout_colunas]
+
+def localizar_coluna(df, nomes_possiveis):
+    return next((c for c in df.columns if str(c).strip().lower() in [n.lower() for n in nomes_possiveis]), None)
 
 def gerar_nome_abandono(df_kpi, col_data_evento):
     try:
@@ -79,119 +82,98 @@ def gerar_nome_abandono(df_kpi, col_data_evento):
     except:
         return "Abandono.csv"
 
-# -------------------- Aba Abandono --------------------
+def gerar_nome_carinho():
+    hoje = datetime.now()
+    if hoje.weekday() == 0: # segunda
+        sab = hoje - timedelta(days=2)
+        dom = hoje - timedelta(days=1)
+        return f"Carinho_Abandonado_{sab.strftime('%d.%m')}_{dom.strftime('%d.%m')}.csv"
+    else:
+        ont = hoje - timedelta(days=1)
+        return f"Carinho_Abandonado_{ont.strftime('%d.%m')}.csv"
+
+# -------------------- ABA ABANDONO --------------------
 if opcao == "❌👋 Abandono":
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
-    st.markdown("<div class='card-importacao'><h5>Importe as bases aqui</h5></div>", unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        file_kpi = st.file_uploader("📥 Base KPI", type=["xlsx", "csv"], key="KPI")
-    with col2:
-        file_fid = st.file_uploader("📥 Base Fidelizados", type=["xlsx", "csv"], key="FID")
-
+    file_kpi = st.file_uploader("📂 Importar base KPI", type=["xlsx","csv"])
+    file_fid = st.file_uploader("📂 Importar base Fidelizados", type=["xlsx","csv"])
     if file_kpi and file_fid:
         try:
             df_kpi = pd.read_excel(file_kpi) if file_kpi.name.lower().endswith(".xlsx") else pd.read_csv(file_kpi, sep=None, engine="python", encoding="utf-8")
             df_fid = pd.read_excel(file_fid) if file_fid.name.lower().endswith(".xlsx") else pd.read_csv(file_fid, sep=None, engine="python", encoding="utf-8")
-
             col_wpp_kpi = localizar_coluna(df_kpi, ['whatsapp principal'])
             col_wpp_fid = localizar_coluna(df_fid, ['whatsapp principal'])
             col_obs = localizar_coluna(df_kpi, ['observação'])
             col_carteiras = localizar_coluna(df_kpi, ['carteiras'])
-            col_contato = localizar_coluna(df_kpi, ['contato', 'nome cliente'])
+            col_contato = localizar_coluna(df_kpi, ['contato','nome cliente'])
             col_data_evento = localizar_coluna(df_kpi, ['data evento'])
-
-            for nome_leg, col in {
-                'WhatsApp Principal (KPI)': col_wpp_kpi,
-                'WhatsApp Principal (Fidelizados)': col_wpp_fid,
-                'Observação': col_obs,
-                'Carteiras': col_carteiras,
-                'Contato/Nome Cliente': col_contato
-            }.items():
-                if col is None:
-                    st.error(f"❌ Coluna obrigatória não encontrada: {nome_leg}")
-                    st.stop()
-
-            # Limpeza e filtros
-            df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].astype(str).str.strip().apply(lambda x: re.sub(r'^0+', '', x))
+            # validação
+            if not all([col_wpp_kpi,col_wpp_fid,col_obs,col_contato]):
+                st.error("❌ Colunas obrigatórias não encontradas.")
+                st.stop()
+            df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].astype(str).str.strip().apply(lambda x: re.sub(r'^0+','',x))
             df_kpi = df_kpi[~df_kpi[col_wpp_kpi].isin(df_fid[col_wpp_fid])]
             df_kpi = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio|Fundamental", case=False, na=False)]
             if col_carteiras:
-                df_kpi = df_kpi[~df_kpi[col_carteiras].astype(str).str.strip().isin(["SAC - Pós Venda", "Secretaria"])]
-            df_kpi[col_contato] = [tratar_nome(nome, numero) for nome, numero in zip(df_kpi[col_contato], df_kpi[col_wpp_kpi])]
-
-            base_pronta = df_kpi.rename(columns={col_contato: "nome", col_wpp_kpi: "Numero"})[["nome", "Numero"]].drop_duplicates(subset=["Numero"])
-            export_df = exportar_layout_robbu(base_pronta, "nome", "Numero")
-            nome_arquivo = gerar_nome_abandono(df_kpi, col_data_evento)
-
-            st.success(f"✅ Base pronta com {len(export_df)} registros.")
+                df_kpi = df_kpi[~df_kpi[col_carteiras].isin(["SAC - Pós Venda","Secretaria"])]
+            df_kpi[col_contato] = [tratar_nome(n, t) for n,t in zip(df_kpi[col_contato], df_kpi[col_wpp_kpi])]
+            base_final = df_kpi.rename(columns={col_contato:"nome", col_wpp_kpi:"Numero"})[["nome","Numero"]].drop_duplicates(subset=["Numero"])
+            export_df = exportar_layout_robbu(base_final,"nome","Numero")
+            nome_arquivo = gerar_nome_abandono(df_kpi,col_data_evento)
+            st.success(f"✅ Base gerada com {len(export_df)} registros.")
             output = BytesIO()
             export_df.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
             output.seek(0)
             st.download_button("⬇️ Baixar base Abandono", output, file_name=nome_arquivo, mime="text/csv")
         except Exception as e:
-            st.error(f"❌ Erro no processamento: {e}")
+            st.error(f"Erro no processamento: {e}")
 
-# -------------------- Aba Carrinho Abandonado --------------------
+# -------------------- ABA CARINHO ABANDONADO --------------------
 elif opcao == "🛒👋 Carrinho Abandonado":
-    st.markdown("<div class='titulo-principal'>Carrinho Abandonado</div>", unsafe_allow_html=True)
-    st.markdown("<div class='card-importacao'><h5>Importe as três bases aqui</h5></div>", unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        file_carinho = st.file_uploader("📥 Carrinho Abandonado", type=["csv"], key="carinho")
-    with col2:
-        file_naopago = st.file_uploader("📥 Não Pagos", type=["xlsx", "csv"], key="naopago")
-    with col3:
-        file_pedidos = st.file_uploader("📥 Pedidos", type=["xlsx", "csv"], key="pedidos")
-
+    st.markdown("<div class='titulo-principal'>Carinho Abandonado</div>", unsafe_allow_html=True)
+    file_carinho = st.file_uploader("📥 Carrinho Abandonado", type=["csv"], key="carinho")
+    file_naopago = st.file_uploader("📥 Não Pagos", type=["xlsx","csv"], key="naopago")
+    file_pedidos = st.file_uploader("📥 Pedidos", type=["xlsx","csv"], key="pedidos")
     if file_carinho and file_naopago and file_pedidos:
         try:
+            # Carrinho
             df1 = pd.read_csv(file_carinho, sep=',', encoding='utf-8')
             col_map1 = {"First-Name": "nome", "Email": "E-mail", "Phone": "Numero"}
             df1 = df1[[c for c in col_map1 if c in df1.columns]].rename(columns=col_map1)
-            df1['nome'] = [tratar_nome(n, num) for n, num in zip(df1['nome'], df1['Numero'])]
+            df1['nome'] = [tratar_nome(n,num) for n,num in zip(df1['nome'], df1['Numero'])]
             df1['Numero'] = df1['Numero'].apply(tratar_numero)
             df1['E-mail'] = df1['E-mail'].apply(tratar_email)
-
+            # Não pagos
             if file_naopago.name.lower().endswith(".csv"):
                 df2 = pd.read_csv(file_naopago, encoding="utf-8")
             else:
                 df2 = pd.read_excel(file_naopago)
-            col_map2 = {
-                "Nome completo (cobrança)": "nome",
-                "E-mail (cobrança)": "E-mail",
-                "Telefone (cobrança)": "Numero"
-            }
+            col_map2 = {"Nome completo (cobrança)": "nome", "E-mail (cobrança)": "E-mail", "Telefone (cobrança)": "Numero"}
             df2 = df2[[c for c in col_map2 if c in df2.columns]].rename(columns=col_map2)
-            df2['nome'] = [tratar_nome(n, num) for n, num in zip(df2['nome'], df2['Numero'])]
+            df2['nome'] = [tratar_nome(n,num) for n,num in zip(df2['nome'], df2['Numero'])]
             df2['Numero'] = df2['Numero'].apply(tratar_numero)
             df2['E-mail'] = df2['E-mail'].apply(tratar_email)
-
             qtd_carinho = len(df1)
             qtd_naopag = len(df2)
-
+            # Unifica
             base_total = pd.concat([df1, df2], ignore_index=True)
-
+            # Pedidos
             if file_pedidos.name.lower().endswith(".csv"):
                 df_ped = pd.read_csv(file_pedidos, encoding="utf-8")
             else:
                 df_ped = pd.read_excel(file_pedidos)
             possiveis = [c for c in df_ped.columns if 'email' in c.lower()]
             emails_pedidos = set(df_ped[possiveis[0]].astype(str).str.strip().str.lower()) if possiveis else set()
-
             base_filtrada = base_total[~base_total['E-mail'].isin(emails_pedidos)].copy()
             base_filtrada = base_filtrada.drop_duplicates(subset=['Numero'], keep="first").reset_index(drop=True)
             qtd_final = len(base_filtrada)
-
+            # Export
             export_df = exportar_layout_robbu(base_filtrada, "nome", "Numero")
-            nome_arquivo = gerar_nome_abandono(df1, None)  # reuse função ou criar gerar_nome_carinho de acordo com regra
-
-            st.success(f"✅ Base final com {qtd_final} registros.")
+            nome_arquivo = gerar_nome_carinho()
+            st.success(f"✅ Base gerada com {qtd_final} registros. (Carrinho: {qtd_carinho} | Não pagos: {qtd_naopag})")
             output = BytesIO()
             export_df.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
             output.seek(0)
             st.download_button("⬇️ Baixar base Carinho Abandonado", output, file_name=nome_arquivo, mime="text/csv")
         except Exception as e:
-            st.error(f"❌ Erro no processamento: {e}")
+            st.error(f"Erro no processamento: {e}")
