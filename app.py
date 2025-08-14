@@ -5,32 +5,100 @@ import re
 
 st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# --- CSS: mantido como nas etapas anteriores ---
-
+# ---------- CSS identidade visual ----------
 st.markdown("""
 <style>
-body, .stApp { background: linear-gradient(90deg, #018a62 0%, #3be291 35%, #fee042 100%) !important; min-height: 100vh; color: #222 !important; font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important; }
-section[data-testid="stSidebar"] { background-color: #004aad !important; color: #fff !important; font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important; }
-.titulo-principal { background: rgba(255,255,255,0.55); color: #06643b; padding: 28px 0 12px 0; border-radius: 16px; text-align: center; font-size: 2.7em; font-weight: 700; margin: 40px auto 18px auto; letter-spacing: 1.2px; box-shadow: 0 2px 14px rgba(0,0,0,0.07); width: 95%; max-width: 750px; font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif; }
-.manual-popup, .manual-inicio, .card-importacao { background: #fff; color: #222; border-radius: 22px; box-shadow: 0 4px 28px rgba(0,0,0,0.07); padding: 32px 28px 20px 28px; width: 100%; max-width: 630px; margin: 0 auto 32px auto; border-left: 9px solid #018a62; font-size: 1.08em; font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif; }
-.card-importacao h5 { color: #018a62; font-size: 1.35em; font-weight: bold; text-align: center; margin-bottom: 14px; margin-top: 0; font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif; }
-.stDownloadButton > button, .stFileUploader > div > button { background-color: #3be291; color: #06643b; font-weight: bold; border-radius: 7px; padding: 10px 36px; border: none; font-size: 1.17em; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: background 0.18s; }
-.stDownloadButton > button:hover, .stFileUploader > div > button:hover { background-color: #018a62; color: #fff; }
-.stDataFrame, .stTable { background: #fff; border-radius: 16px; color: #222; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
-@media (max-width: 700px){ .titulo-principal, .manual-popup, .manual-inicio, .card-importacao {max-width:95vw; padding:18px 8vw 14px 8vw;} }
+body, .stApp {
+    background: linear-gradient(90deg, #018a62 0%, #3be291 35%, #fee042 100%) !important;
+    min-height: 100vh;
+    color: #222 !important;
+    font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important;
+}
+section[data-testid="stSidebar"] {
+    background-color: #004aad !important;
+    color: #fff !important;
+    font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important;
+}
+.titulo-principal {
+    background: rgba(255,255,255,0.55);
+    color: #06643b;
+    padding: 28px 0 12px 0;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 2.7em;
+    font-weight: 700;
+    margin: 40px auto 18px auto;
+    letter-spacing: 1.2px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.07);
+    width: 95%;
+    max-width: 750px;
+    font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+}
+.manual-popup, .manual-inicio, .card-importacao {
+    background: #fff;
+    color: #222;
+    border-radius: 22px;
+    box-shadow: 0 4px 28px rgba(0,0,0,0.07);
+    padding: 32px 28px 20px 28px;
+    width: 100%;
+    max-width: 630px;
+    margin: 0 auto 32px auto;
+    border-left: 9px solid #018a62;
+    font-size: 1.08em;
+    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+}
+.card-importacao h5 {
+    color: #018a62;
+    font-size: 1.35em;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 14px;
+    margin-top: 0;
+    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+}
+.stDownloadButton > button, .stFileUploader > div > button {
+    background-color: #3be291;
+    color: #06643b;
+    font-weight: bold;
+    border-radius: 7px;
+    padding: 10px 36px;
+    border: none;
+    font-size: 1.17em;
+    margin-top: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    transition: background 0.18s;
+}
+.stDownloadButton > button:hover, .stFileUploader > div > button:hover {
+    background-color: #018a62;
+    color: #fff;
+}
+.stDataFrame, .stTable {
+    background: #fff;
+    border-radius: 16px;
+    color: #222;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+@media (max-width: 700px){
+    .titulo-principal, .manual-popup, .manual-inicio, .card-importacao {max-width:95vw; padding:18px 8vw 14px 8vw;}
+}
 </style>
 """, unsafe_allow_html=True)
 
+# --- Menu lateral ---
 st.sidebar.title("📋 Selecione o tipo de campanha")
-opcao = st.sidebar.radio("", ["👋❌ Abandono", "🛒👋 Carrinho Abandonado"])
+opcao = st.sidebar.radio(
+    "",
+    ["👋❌ Abandono", "🛒👋 Carrinho Abandonado"]
+)
 
+# --- Funções utilitárias ---
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
     if f.name.lower().endswith(".csv"):
         try:
             df = pd.read_csv(data_io, encoding="utf-8", sep=None, engine="python")
-        except UnicodeDecodeError:
+        except Exception:
             data_io.seek(0)
             df = pd.read_csv(data_io, encoding="ISO-8859-1", sep=None, engine="python")
     else:
@@ -64,17 +132,19 @@ def limpar_numero_final(num):
     num_limpo = num_limpo.lstrip("0")
     return "55" + num_limpo
 
-if opcao == "🏚️ Abandono":
+# --- Página principal ---
+if opcao == "👋❌ Abandono":
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
     st.markdown("""
         <div class='manual-inicio'>
             <strong>PARA GERAR A BASE DE CAMPANHA É NECESSÁRIO:</strong><br>
-            1️⃣ Gerar o relatório de <b>KPI de Eventos</b> para o período.<br>
-            2️⃣ Gerar o relatório de <b>Contatos Fidelizados</b>.<br>
-            3️⃣ Importe os arquivos abaixo.<br>
+            1️⃣ Gerar o relatório de <b>KPI de Eventos</b> para o período;<br>
+            2️⃣ Gerar o relatório de <b>Contatos Fidelizados</b>;<br>
+            3️⃣ Importe os arquivos abaixo;<br>
             4️⃣ O sistema irá processar e gerar a base final automaticamente.<br>
         </div>
     """, unsafe_allow_html=True)
+
     st.markdown("""
         <div class='card-importacao'>
             <h5>Importe as bases aqui</h5>
@@ -85,6 +155,7 @@ if opcao == "🏚️ Abandono":
     with col2:
         file_fid = st.file_uploader("📥 Base Fidelizados", type=["xlsx", "csv"], key="FID")
     st.markdown("</div>", unsafe_allow_html=True)
+
     if file_kpi and file_fid:
         df_kpi = read_file(file_kpi)
         df_fid = read_file(file_fid)
@@ -128,6 +199,7 @@ if opcao == "🏚️ Abandono":
                     base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(["SAC - Pós Venda", "Secretaria"])]
                 col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
                 if col_contato:
+                    # Aplica validando nome e número conforme a regra
                     base_pronta[col_contato] = [
                         processar_nome(nome, numero)
                         for nome, numero in zip(base_pronta[col_contato], base_pronta[col_wpp_kpi])
@@ -139,38 +211,4 @@ if opcao == "🏚️ Abandono":
                           "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
                           "CORINGA4", "CORINGA5", "PRIORIDADE"]
                 base_importacao = pd.DataFrame(columns=layout)
-                base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(limpar_numero_final)
-                base_importacao["NOME_CLIENTE"] = base_pronta["Nome"]
-                base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
-                base_importacao = base_importacao[layout]
-                st.success(f"✅ Base de campanha pronta! {len(base_importacao)} registros.")
-                output = BytesIO()
-                base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
-                output.seek(0)
-                st.download_button("⬇️ Baixar campanha (.csv)", output, file_name=nome_arquivo, mime="text/csv")
-                st.markdown(f"""
-                    <div class='manual-popup'>
-                        <h4>📤 Próximos passos – Importar na Robbu</h4>
-                        <p><strong>Baixe o arquivo gerado acima (<em>{nome_arquivo}</em>) e siga:</strong></p>
-                        <ol>
-                            <li>No Robbu, vá em <strong>Público</strong> e clique <strong>Importar Público</strong></li>
-                            <li>Na descrição, informe <strong>Abandono</strong> e a data</li>
-                            <li>Escolha o segmento <strong>Distribuição Manual</strong></li>
-                            <li>Importe o arquivo gerado</li>
-                            <li>Marque autorização de processamento/comunicação</li>
-                            <li>Tipo de autorização: <strong>Consentimento</strong></li>
-                            <li>Marque <strong>Manter apenas neste segmento</strong></li>
-                            <li>Clique <strong>Importar</strong> e aguarde a confirmação</li>
-                        </ol>
-                    </div>
-                """, unsafe_allow_html=True)
-    st.markdown("<h4 style='color:#077339; margin-top:28px; text-align:center;'>POR DENTRO DA BASE</h4>", unsafe_allow_html=True)
-    if 'base_importacao' in locals():
-        st.dataframe(base_importacao)
-elif opcao == "🛒👋 Carrinho Abandonado":
-    st.markdown("<div class='titulo-principal'>Carrinho Abandonado</div>", unsafe_allow_html=True)
-    st.markdown("""
-        <div class='manual-popup' style='text-align:center;'>
-            🚧 Em construção... Em breve será possível gerar a base de Carrinho Abandonado.
-        </div>
-    """, unsafe_allow_html=True)
+                base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply
