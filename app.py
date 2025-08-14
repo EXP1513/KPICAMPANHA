@@ -96,10 +96,8 @@ def processar_nome_abandono(valor):
     return nome_limpo.title()
 
 def tratar_numero_telefone(num):
-    if pd.isna(num):
-        return ''
-    num_str = re.sub(r'\D', '', str(num))
-    num_str = num_str.lstrip('0')
+    if pd.isna(num): return ''
+    num_str = re.sub(r'\D', '', str(num)).lstrip('0')
     return '55' + num_str if num_str else ''
 
 # === Funções Carrinho ===
@@ -152,7 +150,6 @@ def gerar_nome_arquivo_carrinho():
         return f"{prefixo}_{dia_anterior.strftime('%d.%m')}.csv"
 
 def gerar_nome_arquivo_abandono(df_kpi, col_data_evento):
-    nome_arquivo = "Abandono.csv"
     if col_data_evento and col_data_evento in df_kpi.columns:
         try:
             df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce', dayfirst=True)
@@ -160,12 +157,12 @@ def gerar_nome_arquivo_abandono(df_kpi, col_data_evento):
             if not datas_validas.empty:
                 di, dfinal = min(datas_validas), max(datas_validas)
                 if di == dfinal:
-                    nome_arquivo = f"Abandono_{di.strftime('%d.%m')}.csv"
+                    return f"Abandono_{di.strftime('%d.%m')}.csv"
                 else:
-                    nome_arquivo = f"Abandono_{di.strftime('%d.%m')}_a_{dfinal.strftime('%d.%m')}.csv"
+                    return f"Abandono_{di.strftime('%d.%m')}_a_{dfinal.strftime('%d.%m')}.csv"
         except:
             pass
-    return nome_arquivo
+    return "Abandono.csv"
 
 # ===== Aba Abandono =====
 def aba_abandono():
@@ -188,17 +185,17 @@ def aba_abandono():
             st.error("❌ Colunas obrigatórias não encontradas.")
             st.stop()
 
-        df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].astype(str).str.strip()
-        df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].apply(lambda x: re.sub(r'^0+', '', x))
+        # Limpeza e filtros
+        df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].astype(str).str.strip().apply(lambda x: re.sub(r'^0+', '', x))
         df_kpi = df_kpi[~df_kpi[col_wpp_kpi].isin(df_fid[col_wpp_fid])]
         df_kpi = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio|Fundamental", case=False, na=False)]
         if col_carteiras:
             df_kpi = df_kpi[~df_kpi[col_carteiras].isin(["SAC - Pós Venda", "Secretaria"])]
         df_kpi[col_contato] = df_kpi[col_contato].apply(processar_nome_abandono)
 
+        # Base final
         mapping = {col_contato:"Nome", col_wpp_kpi:"Numero", col_obs:"Tipo"}
-        base_pronta = df_kpi.rename(columns=mapping)[["Nome","Numero","Tipo"]]
-        base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
+        base_pronta = df_kpi.rename(columns=mapping)[["Nome","Numero","Tipo"]].drop_duplicates(subset=["Numero"], keep="first")
 
         layout = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE",
                   "CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3",
@@ -208,13 +205,15 @@ def aba_abandono():
         base_export["NOME_CLIENTE"] = base_pronta["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         base_export["TIPO_DE_REGISTRO"] = "TELEFONE"
 
-        # Removendo duplicatas e linhas vazias
+        # Remover duplicatas e vazios
         base_export = base_export.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         base_export = base_export[base_export["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
         base_export = base_export[layout]
 
+        total_leads = len(base_export)
         nome_arquivo = gerar_nome_arquivo_abandono(df_kpi, col_data_evento)
-        st.success(f"✅ Base de abandono pronta! {len(base_export)} registros.")
+        st.success(f"✅ Base de abandono pronta! Total de Leads Gerados: {total_leads}")
+
         output = BytesIO()
         base_export.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
@@ -233,36 +232,33 @@ def aba_carrinho():
         df_nao_pagos = importar_excel_tratamento_nao_pagos(read_file(file_nao_pagos))
         df_pedidos = read_file(file_pedidos)
 
-        qtd_carrinho = len(df_carrinho)
-        qtd_nao_pagos = len(df_nao_pagos)
-
+        # Unifica bases
         df_unificado = pd.concat([df_carrinho, df_nao_pagos], ignore_index=True)
+
+        # Remove e-mails já em pedidos
         if 'E-mail (cobrança)' in df_pedidos.columns:
             emails_unif = df_unificado['e-mail'].str.strip().str.lower()
             emails_ped = df_pedidos['E-mail (cobrança)'].astype(str).str.strip().str.lower()
             df_unificado = df_unificado[~emails_unif.isin(emails_ped)]
+
         df_unificado = df_unificado[['Nome','Numero']]
 
+        # Layout final
         layout_cols = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ",
                        "CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         df_saida = pd.DataFrame(columns=layout_cols)
         df_saida["VALOR_DO_REGISTRO"] = df_unificado["Numero"]
         df_saida["NOME_CLIENTE"] = df_unificado["Nome"].astype(str).str.strip().str.lower().str.capitalize()
-        df_saida["TIPO_DE_REGISTRO"] = df_saida["VALOR_DO_REGISTRO"].apply(
-            lambda x: "TELEFONE" if str(x).strip() != "" else ""
-        )
+        df_saida["TIPO_DE_REGISTRO"] = df_saida["VALOR_DO_REGISTRO"].apply(lambda x: "TELEFONE" if str(x).strip() != "" else "")
 
-        # Removendo duplicatas e linhas vazias
+        # Remove duplicatas e vazios
         df_saida = df_saida.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         df_saida = df_saida[df_saida["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
 
         qtd_total_final = len(df_saida)
         nome_arquivo = gerar_nome_arquivo_carrinho()
+        st.success(f"✅ Base Carrinho pronta! Total de Leads Gerados: {qtd_total_final}")
 
-        st.success(f"✅ Base Carrinho pronta!\n"
-                   f"- Origem Carrinho Abandonado: {qtd_carrinho}\n"
-                   f"- Origem Não Pagos: {qtd_nao_pagos}\n"
-                   f"- Total Final: {qtd_total_final}")
         output = BytesIO()
         df_saida.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
