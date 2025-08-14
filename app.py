@@ -88,7 +88,7 @@ section[data-testid="stSidebar"] {
 st.sidebar.title("📋 Selecione o tipo de campanha")
 opcao = st.sidebar.radio(
     "",
-    ["👋❌ Abandono", "🛒👋 Carrinho Abandonado"]
+    ["🏚️ Abandono", "🛒👋 Carrinho Abandonado"]
 )
 
 # --- Funções utilitárias ---
@@ -133,7 +133,7 @@ def limpar_numero_final(num):
     return "55" + num_limpo
 
 # --- Página principal ---
-if opcao == "👋❌ Abandono":
+if opcao == "🏚️ Abandono":
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
     st.markdown("""
         <div class='manual-inicio'>
@@ -211,4 +211,38 @@ if opcao == "👋❌ Abandono":
                           "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
                           "CORINGA4", "CORINGA5", "PRIORIDADE"]
                 base_importacao = pd.DataFrame(columns=layout)
-                base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply
+                base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(limpar_numero_final)
+                base_importacao["NOME_CLIENTE"] = base_pronta["Nome"]
+                base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
+                base_importacao = base_importacao[layout]
+                st.success(f"✅ Base de campanha pronta! {len(base_importacao)} registros.")
+                output = BytesIO()
+                base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
+                output.seek(0)
+                st.download_button("⬇️ Baixar campanha (.csv)", output, file_name=nome_arquivo, mime="text/csv")
+                st.markdown(f"""
+                    <div class='manual-popup'>
+                        <h4>📤 Próximos passos – Importar na Robbu</h4>
+                        <p><strong>Baixe o arquivo gerado acima (<em>{nome_arquivo}</em>) e siga:</strong></p>
+                        <ol>
+                            <li>No Robbu, vá em <strong>Público</strong> e clique <strong>Importar Público</strong></li>
+                            <li>Na descrição, informe <strong>Abandono</strong> e a data</li>
+                            <li>Escolha o segmento <strong>Distribuição Manual</strong></li>
+                            <li>Importe o arquivo gerado</li>
+                            <li>Marque autorização de processamento/comunicação</li>
+                            <li>Tipo de autorização: <strong>Consentimento</strong></li>
+                            <li>Marque <strong>Manter apenas neste segmento</strong></li>
+                            <li>Clique <strong>Importar</strong> e aguarde a confirmação</li>
+                        </ol>
+                    </div>
+                """, unsafe_allow_html=True)
+    st.markdown("<h4 style='color:#077339; margin-top:28px; text-align:center;'>POR DENTRO DA BASE</h4>", unsafe_allow_html=True)
+    if 'base_importacao' in locals():
+        st.dataframe(base_importacao)
+elif opcao == "🛒👋 Carrinho Abandonado":
+    st.markdown("<div class='titulo-principal'>Carrinho Abandonado</div>", unsafe_allow_html=True)
+    st.markdown("""
+        <div class='manual-popup' style='text-align:center;'>
+            🚧 Em construção... Em breve será possível gerar a base de Carrinho Abandonado.
+        </div>
+    """, unsafe_allow_html=True)
