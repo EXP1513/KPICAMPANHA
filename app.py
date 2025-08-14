@@ -139,7 +139,7 @@ def importar_excel_tratamento_nao_pagos(df):
 
 def gerar_nome_arquivo_carrinho():
     hoje = datetime.now()
-    dia_semana = hoje.weekday()  # segunda=0
+    dia_semana = hoje.weekday()
     prefixo = "Carinho_Nãopagos"
     if dia_semana == 0:  # segunda-feira
         sexta = hoje - timedelta(days=3)
@@ -193,25 +193,30 @@ def aba_abandono():
             df_kpi = df_kpi[~df_kpi[col_carteiras].isin(["SAC - Pós Venda", "Secretaria"])]
         df_kpi[col_contato] = df_kpi[col_contato].apply(processar_nome_abandono)
 
-        # Base final
-        mapping = {col_contato:"Nome", col_wpp_kpi:"Numero", col_obs:"Tipo"}
-        base_pronta = df_kpi.rename(columns=mapping)[["Nome","Numero","Tipo"]].drop_duplicates(subset=["Numero"], keep="first")
+        base_pronta = df_kpi.rename(columns={col_contato:"Nome", col_wpp_kpi:"Numero"}).drop_duplicates(subset=["Numero"], keep="first")
 
-        layout = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE",
-                  "CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3",
-                  "CORINGA4","CORINGA5","PRIORIDADE"]
+        # Layout final
+        layout = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         base_export = pd.DataFrame(columns=layout)
         base_export["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(tratar_numero_telefone)
         base_export["NOME_CLIENTE"] = base_pronta["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         base_export["TIPO_DE_REGISTRO"] = "TELEFONE"
 
+        # Remover contato bloqueado
+        email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com".lower()
+        numero_bloqueado = re.sub(r'\D', '', "(21) 96999-9549")
+        base_export = base_export[
+            ~(base_export["VALOR_DO_REGISTRO"] == numero_bloqueado) &
+            ~(base_export["NOME_CLIENTE"].str.lower() == email_bloqueado)
+        ]
+
         # Remover duplicatas e vazios
         base_export = base_export.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         base_export = base_export[base_export["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
-        base_export = base_export[layout]
 
         total_leads = len(base_export)
         nome_arquivo = gerar_nome_arquivo_abandono(df_kpi, col_data_evento)
+
         st.success(f"✅ Base de abandono pronta! Total de Leads Gerados: {total_leads}")
 
         output = BytesIO()
@@ -234,8 +239,6 @@ def aba_carrinho():
 
         # Unifica bases
         df_unificado = pd.concat([df_carrinho, df_nao_pagos], ignore_index=True)
-
-        # Remove e-mails já em pedidos
         if 'E-mail (cobrança)' in df_pedidos.columns:
             emails_unif = df_unificado['e-mail'].str.strip().str.lower()
             emails_ped = df_pedidos['E-mail (cobrança)'].astype(str).str.strip().str.lower()
@@ -244,19 +247,27 @@ def aba_carrinho():
         df_unificado = df_unificado[['Nome','Numero']]
 
         # Layout final
-        layout_cols = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ",
-                       "CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
+        layout_cols = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         df_saida = pd.DataFrame(columns=layout_cols)
         df_saida["VALOR_DO_REGISTRO"] = df_unificado["Numero"]
         df_saida["NOME_CLIENTE"] = df_unificado["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         df_saida["TIPO_DE_REGISTRO"] = df_saida["VALOR_DO_REGISTRO"].apply(lambda x: "TELEFONE" if str(x).strip() != "" else "")
 
-        # Remove duplicatas e vazios
+        # Remover contato bloqueado
+        email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com".lower()
+        numero_bloqueado = re.sub(r'\D', '', "(21) 96999-9549")
+        df_saida = df_saida[
+            ~(df_saida["VALOR_DO_REGISTRO"] == numero_bloqueado) &
+            ~(df_saida["NOME_CLIENTE"].str.lower() == email_bloqueado)
+        ]
+
+        # Remover duplicatas e vazios
         df_saida = df_saida.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         df_saida = df_saida[df_saida["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
 
         qtd_total_final = len(df_saida)
         nome_arquivo = gerar_nome_arquivo_carrinho()
+
         st.success(f"✅ Base Carrinho pronta! Total de Leads Gerados: {qtd_total_final}")
 
         output = BytesIO()
