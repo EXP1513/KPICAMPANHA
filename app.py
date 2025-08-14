@@ -5,102 +5,29 @@ import re
 
 st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# ---------- CSS visual, traduções do upload e layout ----------
+# --- CSS e Layout ---
 st.markdown("""
 <style>
-body, .stApp {
-    background: linear-gradient(90deg, #018a62 0%, #3be291 35%, #fee042 100%) !important;
-    min-height: 100vh;
-    color: #222 !important;
-    font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important;
+body, .stApp {background: linear-gradient(90deg, #018a62 0%, #3be291 35%, #fee042 100%) !important; min-height: 100vh; color: #222 !important; font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important;}
+section[data-testid="stSidebar"] {background-color: #004aad !important; color: #fff !important;}
+.titulo-principal {background: rgba(255,255,255,0.55); color: #06643b; padding: 28px 0 12px 0; border-radius: 16px; text-align: center; font-size: 2.7em; font-weight: 700; margin: 40px auto 18px auto;}
+.manual-popup, .manual-inicio, .card-importacao, .card-tabela, .card-summary {
+    background: #fff; color: #222; border-radius: 22px; box-shadow: 0 4px 28px rgba(0,0,0,0.07);
+    padding: 28px 24px 18px 24px; width: 100%; max-width: 630px; margin: 0 auto 28px auto; border-left: 9px solid #018a62; font-size: 1.07em;
 }
-section[data-testid="stSidebar"] {
-    background-color: #004aad !important;
-    color: #fff !important;
-    font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important;
+.card-importacao h5, .card-tabela h5, .card-summary h5 {
+    color: #018a62; font-size: 1.18em; font-weight: bold; text-align: center; margin-bottom: 14px; margin-top: 0; letter-spacing: 0.5px;
 }
-.titulo-principal {
-    background: rgba(255,255,255,0.55);
-    color: #06643b;
-    padding: 28px 0 12px 0;
-    border-radius: 16px;
-    text-align: center;
-    font-size: 2.7em;
-    font-weight: 700;
-    margin: 40px auto 18px auto;
-    letter-spacing: 1.2px;
-    box-shadow: 0 2px 14px rgba(0,0,0,0.07);
-    width: 95%;
-    max-width: 750px;
-    font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
-}
-.manual-popup, .manual-inicio, .card-importacao {
-    background: #fff;
-    color: #222;
-    border-radius: 22px;
-    box-shadow: 0 4px 28px rgba(0,0,0,0.07);
-    padding: 32px 28px 20px 28px;
-    width: 100%;
-    max-width: 630px;
-    margin: 0 auto 32px auto;
-    border-left: 9px solid #018a62;
-    font-size: 1.08em;
-    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
-}
-.card-importacao h5 {
-    color: #018a62;
-    font-size: 1.35em;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 14px;
-    margin-top: 0;
-    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
-}
-.stDownloadButton > button, .stFileUploader > div > button {
-    background-color: #3be291;
-    color: #06643b;
-    font-weight: bold;
-    border-radius: 7px;
-    padding: 10px 36px;
-    border: none;
-    font-size: 1.17em;
-    margin-top: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    transition: background 0.18s;
-}
-.stDownloadButton > button:hover, .stFileUploader > div > button:hover {
-    background-color: #018a62;
-    color: #fff;
-}
-.stDataFrame, .stTable {
-    background: #fff;
-    border-radius: 16px;
-    color: #222;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-}
-/* Tradução 'Browse files' para 'Selecionar Arquivos' */
+.stDownloadButton > button, .stFileUploader > div > button {background-color: #3be291; color: #06643b; font-weight: bold; border-radius: 7px; padding: 10px 36px; border: none; font-size: 1.09em; margin-top: 12px;}
+.stDownloadButton > button:hover, .stFileUploader > div > button:hover {background-color: #018a62;color: #fff;}
+.stDataFrame, .stTable {background: #fff; border-radius: 16px; color: #222; box-shadow: 0 2px 12px rgba(0,0,0,0.05);}
 button[title="Browse files"] > div > p { visibility: hidden; }
-button[title="Browse files"]::after {
-    content: "Selecionar Arquivos";
-    color: #06643b;
-    font-size: 1.1em;
-    font-weight: bold;
-}
-/* Tradução 'Drag and drop file here ...' para português */
-[data-testid="stFileUploadDropzoneInstructions"] {
-    visibility: hidden;
-    position: relative;
-}
-[data-testid="stFileUploadDropzoneInstructions"]::after {
-    content: "Arraste e solte o arquivo aqui\nLimite de 200 MB por arquivo • XLSX, CSV";
-    position: absolute;
-    left: 16px;
-    top: 6px;
-    color: #06643b;
-    font-size: 1.05em;
-    font-weight: bold;
-    white-space: pre-line;
-}
+button[title="Browse files"]::after {content: "Selecionar Arquivos"; color: #06643b; font-size: 1.1em; font-weight: bold;}
+[data-testid="stFileUploadDropzoneInstructions"] {visibility: hidden; position: relative;}
+[data-testid="stFileUploadDropzoneInstructions"]::after {content: "Arraste e solte o arquivo aqui\nLimite de 200 MB por arquivo • XLSX, CSV"; position: absolute; left: 16px; top: 6px; color: #06643b; font-size: 1.05em; font-weight: bold; white-space: pre-line;}
+.summary-num {font-size: 1.34em; color: #018a62; font-weight: bold;}
+.summary-label {font-size: 1.10em; color: #06643b; margin-bottom: 6px;}
+@media (max-width: 700px){ .titulo-principal, .manual-popup, .manual-inicio, .card-importacao, .card-tabela, .card-summary {max-width:95vw; padding:18px 8vw 14px 8vw;} }
 </style>
 """, unsafe_allow_html=True)
 
@@ -110,152 +37,129 @@ opcao = st.sidebar.radio(
     ["❌👋 Abandono", "🛒👋 Carrinho Abandonado"]
 )
 
-def read_file(f):
-    bytes_data = f.read()
-    data_io = BytesIO(bytes_data)
-    if f.name.lower().endswith(".csv"):
-        try:
-            df = pd.read_csv(data_io, encoding="utf-8", sep=None, engine="python")
-        except Exception:
-            data_io.seek(0)
-            df = pd.read_csv(data_io, encoding="ISO-8859-1", sep=None, engine="python")
-    else:
-        df = pd.read_excel(data_io)
-    col_carteiras = next((c for c in df.columns if str(c).strip().lower() == "carteiras"), None)
-    if col_carteiras:
-        df = df[df[col_carteiras].astype(str).str.strip().isin(["SAC", "Distribuição Manual"])]
-    return df
-
-def identificar_base_kpi(df):
-    return any("data evento" == str(c).strip().lower() for c in df.columns)
-
-def identificar_base_fidelizados(df):
-    return any(str(c).strip().lower() in ["nome cliente", "contato", "nome"] for c in df.columns)
-
-def processar_nome(valor, numero):
-    texto_original = str(valor).strip()
-    primeiro_nome = texto_original.split(' ')[0]
-    nome_limpo = re.sub(r'[^a-zA-ZÀ-ÿ]', '', primeiro_nome)
-    if len(nome_limpo) <= 3 and str(numero).strip():
+def tratar_nome(nome, numero):
+    primeiro_nome = str(nome).strip().split(' ')[0]
+    nome_letras = re.sub(r'[^a-zA-ZÀ-ÿ]', '', primeiro_nome)
+    if len(nome_letras) <= 3 and str(numero).strip():
         return "Candidato"
-    if not nome_limpo:
+    if not nome_letras:
         return "Candidato"
-    return nome_limpo.title()
+    return nome_letras.title()
 
-def limpar_numero_final(num):
-    num_limpo = re.sub(r"\D", "", str(num))
-    num_limpo = num_limpo.lstrip("0")
-    return "55" + num_limpo
+def tratar_numero(numero):
+    num = re.sub(r"\D", "", str(numero))
+    return "55" + num.lstrip("0") if num else ""
 
-if opcao == "❌👋 Abandono":
-    st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
+def tratar_email(email):
+    return str(email).strip().lower()
+
+if opcao == "🛒👋 Carrinho Abandonado":
+    st.markdown("<div class='titulo-principal'>Carinho Abandonado</div>", unsafe_allow_html=True)
     st.markdown("""
         <div class='manual-inicio'>
-            <strong>PARA GERAR A BASE DE CAMPANHA É NECESSÁRIO:</strong><br>
-            1️⃣ Gerar o relatório de <b>KPI de Eventos</b> para o período;<br>
-            2️⃣ Gerar o relatório de <b>Contatos Fidelizados</b>;<br>
-            3️⃣ Importe os arquivos abaixo;<br>
-            4️⃣ O sistema irá processar e gerar a base final automaticamente.<br>
+            <strong>Como funciona?</strong><br>
+            1️⃣ Importe as três bases abaixo:<br>
+            <b>- Carrinho Abandonado</b>: CSV, separada por vírgula<br>
+            <b>- Não Pagos</b>: XLSX/CSV<br>
+            <b>- Pedidos</b>: XLSX/CSV<br>
+            <br>
+            O sistema irá:<br>
+            • Padronizar nomes e números;<br>
+            • Unificar bases;<br>
+            • Remover registros cujo e-mail existe na base de Pedidos;<br>
+            • Remover duplicatas pelo número de telefone;<br>
+            • Gerar relatório para exportação.
         </div>
     """, unsafe_allow_html=True)
-
     st.markdown("""
         <div class='card-importacao'>
-            <h5>Importe as bases aqui</h5>
+            <h5>Importe as três bases aqui</h5>
     """, unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
-        file_kpi = st.file_uploader("📥 Base KPI", type=["xlsx", "csv"], key="KPI")
+        file_carinho = st.file_uploader("📥 Carrinho Abandonado", type=["csv"], key="carinho")
     with col2:
-        file_fid = st.file_uploader("📥 Base Fidelizados", type=["xlsx", "csv"], key="FID")
+        file_naopago = st.file_uploader("📥 Não Pagos", type=["xlsx", "csv"], key="naopago")
+    with col3:
+        file_pedidos = st.file_uploader("📥 Pedidos", type=["xlsx", "csv"], key="pedidos")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if file_kpi and file_fid:
-        df_kpi = read_file(file_kpi)
-        df_fid = read_file(file_fid)
-        kpi_valido = identificar_base_kpi(df_kpi)
-        fid_valido = identificar_base_fidelizados(df_fid)
-        kpi_invertido = identificar_base_kpi(df_fid)
-        fid_invertido = identificar_base_fidelizados(df_kpi)
-        if (not kpi_valido and not fid_valido) and (not kpi_invertido and not fid_invertido):
-            st.error("❌ Bases incorretas. Verifique os arquivos importados.")
-        elif kpi_invertido and fid_invertido:
-            st.error("⚠️ As bases estão invertidas. Recarregue corretamente.")
-        elif not kpi_valido or not fid_valido:
-            st.error("❌ Um dos arquivos não corresponde ao tipo esperado (KPI ou Fidelizados).")
-        else:
-            col_wpp_kpi = next((c for c in df_kpi.columns if str(c).strip().lower() == "whatsapp principal"), None)
-            col_wpp_fid = next((c for c in df_fid.columns if str(c).strip().lower() == "whatsapp principal"), None)
-            if not col_wpp_kpi or not col_wpp_fid:
-                st.error("❌ Coluna 'WhatsApp Principal' não encontrada.")
+    if file_carinho and file_naopago and file_pedidos:
+        try:
+            # -- Carinho Abandonado --
+            df_carinho = pd.read_csv(file_carinho, sep=',', encoding='utf-8')
+            col_map1 = {"First-Name": "nome", "Email": "E-mail", "Phone": "Numero"}
+            cols1 = [c for c in col_map1 if c in df_carinho.columns]
+            df1 = df_carinho[cols1].rename(columns=col_map1)
+            df1['nome'] = [tratar_nome(n, num) for n, num in zip(df1['nome'], df1['Numero'])]
+            df1['Numero'] = df1['Numero'].apply(tratar_numero)
+            df1['E-mail'] = df1['E-mail'].apply(tratar_email)
+
+            # -- Não Pagos --
+            if file_naopago.name.lower().endswith(".csv"):
+                df_naopago = pd.read_csv(file_naopago, encoding="utf-8")
             else:
-                df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].astype(str).str.strip()
-                df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].apply(lambda x: re.sub(r'^0+', '', x))
-                nome_arquivo = "Abandono.csv"
-                col_data_evento = next((c for c in df_kpi.columns if str(c).strip().lower() == "data evento"), None)
-                if col_data_evento:
-                    try:
-                        df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce', dayfirst=True)
-                        datas_validas = df_kpi[col_data_evento].dropna().dt.date
-                        if not datas_validas.empty:
-                            di, dfinal = min(datas_validas), max(datas_validas)
-                            if di == dfinal:
-                                nome_arquivo = f"Abandono_{di.strftime('%d.%m')}.csv"
-                            else:
-                                nome_arquivo = f"Abandono_{di.strftime('%d.%m')}_a_{dfinal.strftime('%d.%m')}.csv"
-                    except Exception as e:
-                        st.warning(f"⚠️ Não foi possível processar datas: {e}")
-                df_kpi = df_kpi[~df_kpi[col_wpp_kpi].isin(df_fid[col_wpp_fid])]
-                col_obs = next((c for c in df_kpi.columns if str(c).strip().lower() == "observação"), None)
-                base_pronta = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio|Fundamental", case=False, na=False)]
-                col_carteiras = next((c for c in base_pronta.columns if str(c).strip().lower() == "carteiras"), None)
-                if col_carteiras:
-                    base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(["SAC - Pós Venda", "Secretaria"])]
-                col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
-                if col_contato:
-                    base_pronta[col_contato] = [
-                        processar_nome(nome, numero)
-                        for nome, numero in zip(base_pronta[col_contato], base_pronta[col_wpp_kpi])
-                    ]
-                mapping = {col_contato: "Nome", col_wpp_kpi: "Numero", col_obs: "Tipo"}
-                base_pronta = base_pronta.rename(columns=mapping)[["Nome", "Numero", "Tipo"]]
-                base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
-                layout = ["TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "MENSAGEM", "NOME_CLIENTE",
-                          "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
-                          "CORINGA4", "CORINGA5", "PRIORIDADE"]
-                base_importacao = pd.DataFrame(columns=layout)
-                base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(limpar_numero_final)
-                base_importacao["NOME_CLIENTE"] = base_pronta["Nome"]
-                base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
-                base_importacao = base_importacao[layout]
-                st.success(f"✅ Base de campanha pronta! {len(base_importacao)} registros.")
-                output = BytesIO()
-                base_importacao.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
-                output.seek(0)
-                st.download_button("⬇️ Baixar campanha (.csv)", output, file_name=nome_arquivo, mime="text/csv")
-                st.markdown(f"""
-                    <div class='manual-popup'>
-                        <h4>📤 Próximos passos – Importar na Robbu</h4>
-                        <p><strong>Baixe o arquivo gerado acima (<em>{nome_arquivo}</em>) e siga:</strong></p>
-                        <ol>
-                            <li>No Robbu, vá em <strong>Público</strong> e clique <strong>Importar Público</strong></li>
-                            <li>Na descrição, informe <strong>Abandono</strong> e a data</li>
-                            <li>Escolha o segmento <strong>Distribuição Manual</strong></li>
-                            <li>Importe o arquivo gerado</li>
-                            <li>Marque autorização de processamento/comunicação</li>
-                            <li>Tipo de autorização: <strong>Consentimento</strong></li>
-                            <li>Marque <strong>Manter apenas neste segmento</strong></li>
-                            <li>Clique <strong>Importar</strong> e aguarde a confirmação</li>
-                        </ol>
-                    </div>
-                """, unsafe_allow_html=True)
-    st.markdown("<h4 style='color:#077339; margin-top:28px; text-align:center;'>POR DENTRO DA BASE</h4>", unsafe_allow_html=True)
-    if 'base_importacao' in locals():
-        st.dataframe(base_importacao)
-elif opcao == "🛒👋 Carrinho Abandonado":
-    st.markdown("<div class='titulo-principal'>Carrinho Abandonado</div>", unsafe_allow_html=True)
-    st.markdown("""
-        <div class='manual-popup' style='text-align:center;'>
-            🚧 Em construção... Em breve será possível gerar a base de Carrinho Abandonado.
-        </div>
-    """, unsafe_allow_html=True)
+                df_naopago = pd.read_excel(file_naopago)
+            col_map2 = {
+                "Nome completo (cobrança)": "nome",
+                "E-mail (cobrança)": "E-mail",
+                "Telefone (cobrança)": "Numero"
+            }
+            cols2 = [c for c in col_map2 if c in df_naopago.columns]
+            df2 = df_naopago[cols2].rename(columns=col_map2)
+            df2['nome'] = [tratar_nome(n, num) for n, num in zip(df2['nome'], df2['Numero'])]
+            df2['Numero'] = df2['Numero'].apply(tratar_numero)
+            df2['E-mail'] = df2['E-mail'].apply(tratar_email)
+
+            # -- Pedidos --
+            if file_pedidos.name.lower().endswith(".csv"):
+                df_ped = pd.read_csv(file_pedidos, encoding="utf-8")
+            else:
+                df_ped = pd.read_excel(file_pedidos)
+            possiveis = [c for c in df_ped.columns if 'email' in c.lower()]
+            emails_pedidos = set(df_ped[possiveis[0]].astype(str).str.strip().str.lower()) if possiveis else set()
+
+            # Unifica
+            qtd_carinho = len(df1)
+            qtd_naopag = len(df2)
+            base_total = pd.concat([df1, df2], ignore_index=True)
+
+            # Remove pelo email da base Pedidos
+            base_total = base_total[~base_total['E-mail'].isin(emails_pedidos)]
+            qtd_final = len(base_total)
+
+            # Remove duplicatas de Numero
+            base_total = base_total.drop_duplicates(subset=['Numero'], keep="first").reset_index(drop=True)
+            qtd_finaldedup = len(base_total)
+
+            # --- CARD DE RESUMO
+            st.markdown(f"""
+              <div class='card-summary'>
+                <h5>Resumo da Base Gerada - Carinho Abandonado</h5>
+                <div class='summary-label'>Registros da base Carrinho Abandonado:</div>
+                <div class='summary-num'>{qtd_carinho}</div>
+                <div class='summary-label' style="margin-top:12px;">Registros da base Não Pagos:</div>
+                <div class='summary-num'>{qtd_naopag}</div>
+                <div class='summary-label' style="margin-top:12px;">Quantidade total após filtros e remoção de duplicatas:</div>
+                <div class='summary-num'>{qtd_finaldedup}</div>
+              </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("""
+                <div class='card-tabela'>
+                    <h5>Pré-visualização da base final</h5>
+                </div>
+            """, unsafe_allow_html=True)
+            st.dataframe(base_total[['nome', 'E-mail', 'Numero']])
+
+            # Download
+            output = BytesIO()
+            base_total.to_csv(output, index=False, encoding="utf-8-sig", sep=";")
+            output.seek(0)
+            st.download_button("⬇️ Baixar base Carinho Abandonado (.csv)", output, file_name="Carinho_Abandonado.csv", mime="text/csv")
+        except Exception as e:
+            st.error("❌ Erro ao processar as bases. Confira os formatos e campos obrigatórios.")
+
+elif opcao == "❌👋 Abandono":
+    # ... (módulo Abandono mantido como antes, visual e funções já implementadas).
+    pass
