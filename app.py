@@ -3,9 +3,9 @@ import pandas as pd
 from io import BytesIO
 import re
 
-st.set_page_config(page_title="Gera Campanha", layout="centered")
+st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# ---------- CSS e HTML: gradiente igual ao layout do anexo ----------
+# ---------- CSS do layout profissional ----------
 st.markdown("""
 <style>
 body, .stApp {
@@ -29,7 +29,7 @@ section[data-testid="stSidebar"] {
     letter-spacing: 1px;
     box-shadow: 0 2px 14px rgba(0,0,0,0.04);
 }
-.manual-popup, .manual-inicio {
+.manual-popup, .manual-inicio, .card-importacao {
     background: #fff;
     color: #222;
     border-radius: 14px;
@@ -63,11 +63,11 @@ section[data-testid="stSidebar"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- MENU LATERAL COM EMOJIS ----------
+# ---------- Menu lateral com emojis ---------
 st.sidebar.title("📋 Selecione o tipo de campanha")
 opcao = st.sidebar.radio(
     "",
-    ["👋🏚️ Abandono", "🛒 Carrinho Abandonado"]
+    ["🏚️ Abandono", "🛒👋 Carrinho Abandonado"]
 )
 
 # ---------- Funções padrão ----------
@@ -92,7 +92,7 @@ def identificar_base_kpi(df):
     return any("data evento" == str(c).strip().lower() for c in df.columns)
 
 def identificar_base_fidelizados(df):
-    return any(str(c).strip().lower() in ["nome cliente","contato","nome"] for c in df.columns)
+    return any(str(c).strip().lower() in ["nome cliente", "contato", "nome"] for c in df.columns)
 
 def processar_nome(valor):
     texto_original = str(valor).strip()
@@ -102,23 +102,34 @@ def processar_nome(valor):
         return "Candidato"
     return nome_limpo.title()
 
-# ---------- Conteúdo principal ----------
-if opcao == "👋🏚️ Abandono":
-    st.markdown("<div class='titulo-principal'>👋🚀🇧🇷🚀 Gera Campanha - Abandono</div>", unsafe_allow_html=True)
+# ---------- Página principal ----------
+if opcao == "🏚️ Abandono":
+    st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
+
     st.markdown("""
         <div class='manual-inicio'>
             <strong>PARA GERAR A BASE DE CAMPANHA É NECESSÁRIO:</strong><br>
             1️⃣ Gerar o relatório de <b>KPI de Eventos</b> para o período.<br>
             2️⃣ Gerar o relatório de <b>Contatos Fidelizados</b>.<br>
-            3️⃣ Importar o arquivo de <b>KPI</b> abaixo.<br>
-            4️⃣ Importar o arquivo de <b>Fidelizados</b> abaixo.<br>
-            5️⃣ O sistema irá processar e gerar a base final automaticamente.<br>
+            3️⃣ Importe os arquivos abaixo.<br>
+            4️⃣ O sistema irá processar e gerar a base final automaticamente.<br>
         </div>
     """, unsafe_allow_html=True)
 
-    file_kpi = st.file_uploader("📂 Importar base KPI", type=["xlsx", "csv"])
-    file_fid = st.file_uploader("📂 Importar base Fidelizados", type=["xlsx", "csv"])
+    # Bloco card para upload das bases, igual ao manual
+    st.markdown("""
+        <div class='card-importacao'>
+            <h5 style='color:#068569; margin-bottom:16px; text-align:center;'>Importe as bases aqui</h5>
+    """, unsafe_allow_html=True)
 
+    col1, col2 = st.columns(2)
+    with col1:
+        file_kpi = st.file_uploader("📥 Base KPI", type=["xlsx", "csv"], key="KPI")
+    with col2:
+        file_fid = st.file_uploader("📥 Base Fidelizados", type=["xlsx", "csv"], key="FID")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ---- Resto do processamento igual ao anterior ----
     if file_kpi and file_fid:
         df_kpi = read_file(file_kpi)
         df_fid = read_file(file_fid)
@@ -205,13 +216,12 @@ if opcao == "👋🏚️ Abandono":
                     unsafe_allow_html=True
                 )
 
-    # Preview
     st.markdown("<h4 style='color:#fff; margin-top:20px; text-align:center;'>POR DENTRO DA BASE</h4>", unsafe_allow_html=True)
     if 'base_importacao' in locals():
         st.dataframe(base_importacao)
 
-elif opcao == "🛒 Carrinho Abandonado":
-    st.markdown("<div class='titulo-principal'>🛒 Carrinho Abandonado</div>", unsafe_allow_html=True)
+elif opcao == "🛒👋 Carrinho Abandonado":
+    st.markdown("<div class='titulo-principal'>Carrinho Abandonado</div>", unsafe_allow_html=True)
     st.markdown(
         """
         <div class='manual-popup' style='text-align:center;'>
@@ -220,4 +230,3 @@ elif opcao == "🛒 Carrinho Abandonado":
         """,
         unsafe_allow_html=True
     )
-
