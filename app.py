@@ -5,7 +5,7 @@ import re
 
 st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# ---------- CSS visual + tradução de textos automáticos ----------
+# ---------- CSS visual, traduções do upload e layout ----------
 st.markdown("""
 <style>
 body, .stApp {
@@ -78,84 +78,38 @@ section[data-testid="stSidebar"] {
     color: #222;
     box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }
-/* Tradução dos textos padrão do Streamlit */
+/* Tradução 'Browse files' para 'Selecionar Arquivos' */
+button[title="Browse files"] > div > p { visibility: hidden; }
 button[title="Browse files"]::after {
-    content: " Selecionar arquivo";
+    content: "Selecionar Arquivos";
     color: #06643b;
     font-size: 1.1em;
-    font-weight:bold;
-}
-button[title="Browse files"] > div > p {
-    visibility: hidden;
-}
-.stFileUploader label div, .stFileUploader label, .stFileUploader p {
-    font-size: 1.1em !important;
-    color: #06643b !important;
     font-weight: bold;
 }
+/* Tradução 'Drag and drop file here ...' para português */
 [data-testid="stFileUploadDropzoneInstructions"] {
     visibility: hidden;
     position: relative;
 }
 [data-testid="stFileUploadDropzoneInstructions"]::after {
-    content: "Arraste o arquivo aqui";
+    content: "Arraste e solte o arquivo aqui\nLimite de 200 MB por arquivo • XLSX, CSV";
     position: absolute;
     left: 16px;
     top: 6px;
     color: #06643b;
     font-size: 1.05em;
     font-weight: bold;
-}
-.stDownloadButton button::after {
-    content: " Baixar arquivo";
-}
-div[data-testid="stNotificationContent"] {
-    font-size: 1.07em!important;
-}
-.stDataFrameHeaderCell, .stTable tbody th {
-    color: #018a62 !important;
-    font-size: 1em !important;
-    font-weight: bold;
-}
-/* Tradução das tabelas e pesquisas das tabelas */
-[data-testid="stDataFrameSearchInput"] input {
-    font-size: 1em !important;
-}
-[data-testid="stDataFrameSearchInput"] label {
-    visibility: hidden;
-}
-[data-testid="stDataFrameSearchInput"]::before {
-    content: "Filtrar:";
-    color: #018a62;
-    font-weight: bold;
-    margin-right:7px;
-    font-size:1.02em;
-}
-[data-testid="stDataFrameToolbarRowsCount"]{
-    visibility:hidden;
-}
-[data-testid="stDataFrameToolbarRowsCount"]::after {
-    content: "Linhas exibidas:";
-    color: #018a62;
-    font-size: 0.98em;
-    margin-right:5px;
-    font-weight: bold;
-    visibility: visible;
-}
-@media (max-width: 700px){
-    .titulo-principal, .manual-popup, .manual-inicio, .card-importacao {max-width:95vw; padding:18px 8vw 14px 8vw;}
+    white-space: pre-line;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Menu lateral ---
 st.sidebar.title("📋 Selecione o tipo de campanha")
 opcao = st.sidebar.radio(
     "",
     ["❌👋 Abandono", "🛒👋 Carrinho Abandonado"]
 )
 
-# --- Funções utilitárias ---
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
@@ -193,7 +147,6 @@ def limpar_numero_final(num):
     num_limpo = num_limpo.lstrip("0")
     return "55" + num_limpo
 
-# --- Página principal ---
 if opcao == "❌👋 Abandono":
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
     st.markdown("""
