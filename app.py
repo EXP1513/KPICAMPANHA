@@ -5,7 +5,7 @@ import re
 
 st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# ---------- CSS COM SUPORTE A MODO ESCURO ----------
+# ---------- CSS COM AJUSTE AZUL NOS MANUAIS E MODO ESCURO ----------
 st.markdown("""
     <style>
     body {
@@ -33,32 +33,19 @@ st.markdown("""
         background-color: #fb850099;
         color: white;
     }
+    /* Bloco de manual final */
     .manual-popup {
-        background-color: #fff3cdcc;
-        border-left: 6px solid #ff9800cc;
+        background-color: #004aad; /* azul do título */
+        border-left: 6px solid #00337a; /* tom mais escuro */
         padding: 15px;
         border-radius: 6px;
         font-size: 1.05em;
         margin-top: 20px;
-        color: black;
+        color: #fff; /* texto branco */
     }
-
-    /* ===== Ajustes para modo escuro ===== */
+    /* ===== Ajuste para modo escuro ===== */
     @media (prefers-color-scheme: dark) {
         body, .manual-popup, .stMarkdown, .stText, .stDataFrame, .stTable {
-            color: white !important;
-        }
-        div.stDownloadButton > button, div.stFileUploader > div > button {
-            color: white !important;
-            background-color: #ffb703cc !important;
-        }
-        div.stDownloadButton > button:hover, div.stFileUploader > div > button:hover {
-            background-color: #fb850099 !important;
-            color: white !important;
-        }
-        .manual-popup {
-            background-color: rgba(255, 243, 205, 0.1) !important;
-            border-left: 6px solid rgba(255, 152, 0, 0.8);
             color: white !important;
         }
     }
@@ -68,7 +55,6 @@ st.markdown("""
 # ---------- MENU NA SIDEBAR ----------
 st.sidebar.title("📋 Selecione o tipo de campanha")
 opcao = st.sidebar.radio("", ["Abandono", "Carrinho Abandonado"])
-
 
 # ---------- FUNÇÕES COMUNS ----------
 def read_file(f):
@@ -96,19 +82,21 @@ def identificar_base_fidelizados(df):
 
 def processar_nome(valor):
     texto_original = str(valor).strip()
-    nome_limpo = re.sub(r'[^a-zA-ZÀ-ÿ0-9\s]', '', texto_original)  # mantém letras, números e espaços
+    nome_limpo = re.sub(r'[^a-zA-ZÀ-ÿ0-9\s]', '', texto_original)  
     nome_limpo = re.sub(r'\s+', ' ', nome_limpo).strip()
     if not nome_limpo:
         return "Candidato"
     return nome_limpo.title()
 
-
-# ---------- CONTEÚDO DAS PÁGINAS ----------
+# ---------- CONTEÚDO VARIÁVEL POR OPÇÃO ----------
 if opcao == "Abandono":
     st.markdown("<div class='titulo-principal'>🚀🇧🇷🚀 Gera Campanha - Abandono</div>", unsafe_allow_html=True)
-    st.markdown("""
-        <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
-                    padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
+    
+    # Manual inicial com azul e texto branco
+    st.markdown(
+        """
+        <div style='background-color:#004aad; border-left: 5px solid #00337a;
+                    padding: 15px; margin-bottom: 20px; border-radius: 5px; color: #fff;'>
             <strong>PARA GERAR A BASE CAMPANHA É NECESSÁRIO IR ANTES NA ROBBU E...</strong><br>
             1️⃣ Gere o relatório de <b>KPI de Eventos</b>, selecionando o período desejado.<br>
             2️⃣ Gere o relatório de <b>Contatos Fidelizados</b>.<br>
@@ -116,7 +104,9 @@ if opcao == "Abandono":
             4️⃣ Faça o upload de <b>Fidelizados</b> no campo correspondente.<br>
             5️⃣ O sistema processará e gerará a base final automaticamente.<br>
         </div>
-        """, unsafe_allow_html=True)
+        """, 
+        unsafe_allow_html=True
+    )
 
     file_kpi = st.file_uploader("📂 Importar base **KPI**", type=["xlsx", "csv"])
     file_fid = st.file_uploader("📂 Importar base **FIDELIZADOS**", type=["xlsx", "csv"])
@@ -203,6 +193,27 @@ if opcao == "Abandono":
                     data=output,
                     file_name=nome_arquivo,
                     mime="text/csv"
+                )
+
+                # Manual final com fundo azul
+                st.markdown(
+                    f"""
+                    <div class='manual-popup'>
+                        <h4>📤 Próximos passos – Importar na Robbu</h4>
+                        <p><strong>Agora:</strong> baixe o arquivo gerado acima (<em>{nome_arquivo}</em>).</p>
+                        <ol>
+                            <li>Na <strong>Robbu</strong>, vá na opção <strong>"Público"</strong> e clique em <strong>"Importar Público"</strong>.</li>
+                            <li>Na <strong>descrição</strong>, escreva <b>"Abandono"</b> junto com a data do arquivo.</li>
+                            <li>Selecione o segmento <strong>"Distribuição Manual"</strong>.</li>
+                            <li>Faça o upload do arquivo gerado.</li>
+                            <li>Marque a opção: <strong>"Minha empresa possui autorização para processamento e comunicação com o público"</strong>.</li>
+                            <li>Selecione o tipo de autorização como <strong>"Consentimento"</strong>.</li>
+                            <li>Marque <strong>"Manter apenas neste segmento"</strong>.</li>
+                            <li>Clique em <strong>Importar</strong> e aguarde a confirmação de sucesso.</li>
+                        </ol>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
 elif opcao == "Carrinho Abandonado":
