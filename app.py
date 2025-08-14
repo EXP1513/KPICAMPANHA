@@ -5,72 +5,93 @@ import re
 
 st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# ---------- CSS do layout profissional ----------
+# ---------- CSS: identidade visual igual ao site das imagens ----------
 st.markdown("""
 <style>
 body, .stApp {
-    background: linear-gradient(90deg, #068569 0%, #38e195 30%, #ffe255 100%) !important;
-    color: #fff !important;
+    background: linear-gradient(90deg, #018a62 0%, #3be291 35%, #fee042 100%) !important;
     min-height: 100vh;
+    color: #222 !important;
+    font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important;
 }
 section[data-testid="stSidebar"] {
     background-color: #004aad !important;
     color: #fff !important;
+    font-family: 'Segoe UI', 'Montserrat', 'Arial', sans-serif !important;
 }
 .titulo-principal {
-    background: linear-gradient(90deg, #068569 0%, #ffe055 100%);
-    color: #fff;
-    padding: 28px 0 20px 0;
-    border-radius: 12px;
+    background: rgba(255,255,255,0.55);
+    color: #06643b;
+    padding: 28px 0 12px 0;
+    border-radius: 16px;
     text-align: center;
-    font-size: 2.4em;
-    font-weight: bold;
-    margin-bottom: 20px;
-    letter-spacing: 1px;
-    box-shadow: 0 2px 14px rgba(0,0,0,0.04);
+    font-size: 2.7em;
+    font-weight: 700;
+    margin: 40px auto 18px auto;
+    letter-spacing: 1.2px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.07);
+    width: 95%;
+    max-width: 750px;
+    font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
 }
 .manual-popup, .manual-inicio, .card-importacao {
     background: #fff;
     color: #222;
-    border-radius: 14px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    padding: 22px;
+    border-radius: 22px;
+    box-shadow: 0 4px 28px rgba(0,0,0,0.07);
+    padding: 32px 28px 20px 28px;
     width: 100%;
-    max-width: 540px;
-    margin: 0 auto 30px auto;
-    border-left: 7px solid #068569;
-    font-size: 1.10em;
+    max-width: 630px;
+    margin: 0 auto 32px auto;
+    border-left: 9px solid #018a62;
+    font-size: 1.08em;
+    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+}
+.card-importacao h5 {
+    color: #018a62;
+    font-size: 1.35em;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 14px;
+    margin-top: 0;
+    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
 }
 .stDownloadButton > button, .stFileUploader > div > button {
-    background-color: #38e195;
-    color: #222;
+    background-color: #3be291;
+    color: #06643b;
     font-weight: bold;
-    border-radius: 5px;
-    padding: 10px 30px;
+    border-radius: 7px;
+    padding: 10px 36px;
     border: none;
-    font-size: 1.15em;
-    margin-top: 10px;
+    font-size: 1.17em;
+    margin-top: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    transition: background 0.18s;
 }
 .stDownloadButton > button:hover, .stFileUploader > div > button:hover {
-    background-color: #068569;
+    background-color: #018a62;
     color: #fff;
 }
 .stDataFrame, .stTable {
     background: #fff;
-    border-radius: 8px;
-    color: #111;
+    border-radius: 16px;
+    color: #222;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+@media (max-width: 700px){
+    .titulo-principal, .manual-popup, .manual-inicio, .card-importacao {max-width:95vw; padding:18px 8vw 14px 8vw;}
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Menu lateral com emojis ---------
+# ---------- Menu lateral com emojis identicos à foto ----------
 st.sidebar.title("📋 Selecione o tipo de campanha")
 opcao = st.sidebar.radio(
     "",
-    ["👋 Abandono", "🛒👋 Carrinho Abandonado"]
+    ["🏚️ Abandono", "🛒👋 Carrinho Abandonado"]
 )
 
-# ---------- Funções padrão ----------
+# ---------- Funções corretas ----------
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
@@ -84,8 +105,7 @@ def read_file(f):
         df = pd.read_excel(data_io)
     col_carteiras = next((c for c in df.columns if str(c).strip().lower() == "carteiras"), None)
     if col_carteiras:
-        valores_permitidos = ["SAC", "Distribuição Manual"]
-        df = df[df[col_carteiras].astype(str).str.strip().isin(valores_permitidos)]
+        df = df[df[col_carteiras].astype(str).str.strip().isin(["SAC", "Distribuição Manual"])]
     return df
 
 def identificar_base_kpi(df):
@@ -102,7 +122,12 @@ def processar_nome(valor):
         return "Candidato"
     return nome_limpo.title()
 
-# ---------- Página principal ----------
+def limpar_numero_final(num):
+    num_limpo = re.sub(r"\D", "", str(num))
+    num_limpo = num_limpo.lstrip("0")
+    return "55" + num_limpo
+
+# ---------- Página principal igual layout da foto ----------
 if opcao == "🏚️ Abandono":
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
 
@@ -116,12 +141,11 @@ if opcao == "🏚️ Abandono":
         </div>
     """, unsafe_allow_html=True)
 
-    # Bloco card para upload das bases, igual ao manual
+    # Card branco para upload das bases
     st.markdown("""
         <div class='card-importacao'>
-            <h5 style='color:#068569; margin-bottom:16px; text-align:center;'>Importe as bases aqui</h5>
+            <h5>Importe as bases aqui</h5>
     """, unsafe_allow_html=True)
-
     col1, col2 = st.columns(2)
     with col1:
         file_kpi = st.file_uploader("📥 Base KPI", type=["xlsx", "csv"], key="KPI")
@@ -129,7 +153,7 @@ if opcao == "🏚️ Abandono":
         file_fid = st.file_uploader("📥 Base Fidelizados", type=["xlsx", "csv"], key="FID")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- Resto do processamento igual ao anterior ----
+    # Processamento conforme padrão
     if file_kpi and file_fid:
         df_kpi = read_file(file_kpi)
         df_fid = read_file(file_fid)
@@ -156,20 +180,26 @@ if opcao == "🏚️ Abandono":
                 nome_arquivo = "Abandono.csv"
                 col_data_evento = next((c for c in df_kpi.columns if str(c).strip().lower() == "data evento"), None)
                 if col_data_evento:
-                    df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce', dayfirst=True)
-                    datas_validas = df_kpi[col_data_evento].dropna().dt.date
-                    if not datas_validas.empty:
-                        di, dfinal = min(datas_validas), max(datas_validas)
-                        nome_arquivo = f"Abandono_{di.strftime('%d.%m')}" + (f"_a_{dfinal.strftime('%d.%m')}.csv" if di != dfinal else ".csv")
+                    try:
+                        df_kpi[col_data_evento] = pd.to_datetime(df_kpi[col_data_evento], errors='coerce', dayfirst=True)
+                        datas_validas = df_kpi[col_data_evento].dropna().dt.date
+                        if not datas_validas.empty:
+                            di, dfinal = min(datas_validas), max(datas_validas)
+                            if di == dfinal:
+                                nome_arquivo = f"Abandono_{di.strftime('%d.%m')}.csv"
+                            else:
+                                nome_arquivo = f"Abandono_{di.strftime('%d.%m')}_a_{dfinal.strftime('%d.%m')}.csv"
+                    except Exception as e:
+                        st.warning(f"⚠️ Não foi possível processar datas: {e}")
 
                 df_kpi = df_kpi[~df_kpi[col_wpp_kpi].isin(df_fid[col_wpp_fid])]
+
                 col_obs = next((c for c in df_kpi.columns if str(c).strip().lower() == "observação"), None)
-                filtro = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio|Fundamental", case=False, na=False)]
-                base_pronta = filtro.copy()
+                base_pronta = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio|Fundamental", case=False, na=False)]
 
                 col_carteiras = next((c for c in base_pronta.columns if str(c).strip().lower() == "carteiras"), None)
                 if col_carteiras:
-                    base_pronta = base_pronta[~base_pronta[col_carteiras].isin(["SAC - Pós Venda", "Secretaria"])]
+                    base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(["SAC - Pós Venda", "Secretaria"])]
 
                 col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
                 if col_contato:
@@ -179,16 +209,15 @@ if opcao == "🏚️ Abandono":
                 base_pronta = base_pronta.rename(columns=mapping)[["Nome", "Numero", "Tipo"]]
                 base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
 
-                layout = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE",
-                          "CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3",
-                          "CORINGA4","CORINGA5","PRIORIDADE"]
+                layout = ["TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "MENSAGEM", "NOME_CLIENTE",
+                          "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
+                          "CORINGA4", "CORINGA5", "PRIORIDADE"]
+
                 base_importacao = pd.DataFrame(columns=layout)
-                base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"]
+                base_importacao["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(limpar_numero_final)
                 base_importacao["NOME_CLIENTE"] = base_pronta["Nome"]
                 base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
                 base_importacao = base_importacao[layout]
-
-                base_importacao["VALOR_DO_REGISTRO"] = base_importacao["VALOR_DO_REGISTRO"].apply(lambda n: "55" + re.sub(r"\D", "", str(n)).lstrip("0"))
 
                 st.success(f"✅ Base de campanha pronta! {len(base_importacao)} registros.")
                 output = BytesIO()
@@ -196,38 +225,31 @@ if opcao == "🏚️ Abandono":
                 output.seek(0)
                 st.download_button("⬇️ Baixar campanha (.csv)", output, file_name=nome_arquivo, mime="text/csv")
 
-                st.markdown(
-                    f"""
+                st.markdown(f"""
                     <div class='manual-popup'>
                         <h4>📤 Próximos passos – Importar na Robbu</h4>
-                        <p><strong>Agora:</strong> baixe o arquivo gerado acima (<em>{nome_arquivo}</em>).</p>
+                        <p><strong>Baixe o arquivo gerado acima (<em>{nome_arquivo}</em>) e siga:</strong></p>
                         <ol>
-                            <li>No Robbu, vá em <strong>"Público"</strong> e clique <strong>"Importar Público"</strong>.</li>
-                            <li>Na descrição, escreva <b>"Abandono"</b> com a data do arquivo.</li>
-                            <li>Escolha o segmento <strong>"Distribuição Manual"</strong>.</li>
-                            <li>Importe o arquivo gerado.</li>
-                            <li>Marque: <strong>"Autorização para processamento e comunicação"</strong>.</li>
-                            <li>Selecione tipo de autorização <strong>"Consentimento"</strong>.</li>
-                            <li>Marque <strong>"Manter apenas neste segmento"</strong>.</li>
-                            <li>Clique <strong>Importar</strong> e aguarde a confirmação.</li>
+                            <li>No Robbu, vá em <strong>"Público"</strong> &rarr; <strong>"Importar Público"</strong></li>
+                            <li>Na descrição, escreva <b>"Abandono"</b> e data</li>
+                            <li>Escolha segmento <strong>"Distribuição Manual"</strong></li>
+                            <li>Importe o arquivo gerado</li>
+                            <li>Marque autorização de processamento/comunicação</li>
+                            <li>Tipo autorização: <strong>"Consentimento"</strong></li>
+                            <li>Marcar <strong>"Manter apenas neste segmento"</strong></li>
+                            <li>Clique <strong>Importar</strong> e aguarde a confirmação</li>
                         </ol>
                     </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                """, unsafe_allow_html=True)
 
-    st.markdown("<h4 style='color:#fff; margin-top:20px; text-align:center;'>POR DENTRO DA BASE</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color:#fff; margin-top:28px; text-align:center;'>POR DENTRO DA BASE</h4>", unsafe_allow_html=True)
     if 'base_importacao' in locals():
         st.dataframe(base_importacao)
 
 elif opcao == "🛒👋 Carrinho Abandonado":
     st.markdown("<div class='titulo-principal'>Carrinho Abandonado</div>", unsafe_allow_html=True)
-    st.markdown(
-        """
+    st.markdown("""
         <div class='manual-popup' style='text-align:center;'>
             🚧 Em construção... Em breve será possível gerar a base de Carrinho Abandonado.
         </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+    """, unsafe_allow_html=True)
