@@ -3,10 +3,9 @@ import pandas as pd
 from io import BytesIO
 import re
 
-# ---------------- CONFIGURAÇÃO BÁSICA ----------------
 st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# ---------- CSS ----------
+# ---------- CSS COM SUPORTE A MODO ESCURO ----------
 st.markdown("""
     <style>
     body {
@@ -41,13 +40,35 @@ st.markdown("""
         border-radius: 6px;
         font-size: 1.05em;
         margin-top: 20px;
+        color: black;
+    }
+
+    /* ===== Ajustes para modo escuro ===== */
+    @media (prefers-color-scheme: dark) {
+        body, .manual-popup, .stMarkdown, .stText, .stDataFrame, .stTable {
+            color: white !important;
+        }
+        div.stDownloadButton > button, div.stFileUploader > div > button {
+            color: white !important;
+            background-color: #ffb703cc !important;
+        }
+        div.stDownloadButton > button:hover, div.stFileUploader > div > button:hover {
+            background-color: #fb850099 !important;
+            color: white !important;
+        }
+        .manual-popup {
+            background-color: rgba(255, 243, 205, 0.1) !important;
+            border-left: 6px solid rgba(255, 152, 0, 0.8);
+            color: white !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
 
 # ---------- MENU NA SIDEBAR ----------
-st.sidebar.title("📋 Menu de Campanhas")
-opcao = st.sidebar.radio("Selecione o tipo de campanha:", ["Abandono", "Carrinho Abandonado"])
+st.sidebar.title("📋 Selecione o tipo de campanha")
+opcao = st.sidebar.radio("", ["Abandono", "Carrinho Abandonado"])
+
 
 # ---------- FUNÇÕES COMUNS ----------
 def read_file(f):
@@ -75,20 +96,17 @@ def identificar_base_fidelizados(df):
 
 def processar_nome(valor):
     texto_original = str(valor).strip()
-    nome_limpo = re.sub(r'[^a-zA-ZÀ-ÿ0-9\s]', '', texto_original)  # remove símbolos mas mantém espaços
-    nome_limpo = re.sub(r'\s+', ' ', nome_limpo).strip()  # remove espaços extras
+    nome_limpo = re.sub(r'[^a-zA-ZÀ-ÿ0-9\s]', '', texto_original)  # mantém letras, números e espaços
+    nome_limpo = re.sub(r'\s+', ' ', nome_limpo).strip()
     if not nome_limpo:
         return "Candidato"
     return nome_limpo.title()
 
-# ---------- CONTEÚDO VARIÁVEL POR OPÇÃO ----------
-if opcao == "Abandono":
-    # ---------- TÍTULO ----------
-    st.markdown("<div class='titulo-principal'>🚀🇧🇷🚀 Gera Campanha - Abandono</div>", unsafe_allow_html=True)
 
-    # ---------- MANUAL INICIAL ----------
-    st.markdown(
-        """
+# ---------- CONTEÚDO DAS PÁGINAS ----------
+if opcao == "Abandono":
+    st.markdown("<div class='titulo-principal'>🚀🇧🇷🚀 Gera Campanha - Abandono</div>", unsafe_allow_html=True)
+    st.markdown("""
         <div style='background-color:#e0f7fa; border-left: 5px solid #00796b;
                     padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
             <strong>PARA GERAR A BASE CAMPANHA É NECESSÁRIO IR ANTES NA ROBBU E...</strong><br>
@@ -98,19 +116,14 @@ if opcao == "Abandono":
             4️⃣ Faça o upload de <b>Fidelizados</b> no campo correspondente.<br>
             5️⃣ O sistema processará e gerará a base final automaticamente.<br>
         </div>
-        """, 
-        unsafe_allow_html=True
-    )
+        """, unsafe_allow_html=True)
 
-    # ---------- UPLOAD ----------
     file_kpi = st.file_uploader("📂 Importar base **KPI**", type=["xlsx", "csv"])
     file_fid = st.file_uploader("📂 Importar base **FIDELIZADOS**", type=["xlsx", "csv"])
 
     if file_kpi and file_fid:
         df_kpi = read_file(file_kpi)
         df_fid = read_file(file_fid)
-
-        # Verificações
         kpi_valido = identificar_base_kpi(df_kpi)
         fid_valido = identificar_base_fidelizados(df_fid)
         kpi_invertido = identificar_base_kpi(df_fid)
@@ -123,10 +136,8 @@ if opcao == "Abandono":
         elif not kpi_valido or not fid_valido:
             st.error("❌ Um dos arquivos não corresponde ao tipo esperado (KPI ou Fidelizados).")
         else:
-            # Processamento
             col_whatsapp_kpi = next((c for c in df_kpi.columns if str(c).strip().lower() == "whatsapp principal"), None)
             col_whatsapp_fid = next((c for c in df_fid.columns if str(c).strip().lower() == "whatsapp principal"), None)
-
             if not col_whatsapp_kpi or not col_whatsapp_fid:
                 st.error("❌ Coluna 'WhatsApp Principal' não encontrada.")
             else:
@@ -149,29 +160,22 @@ if opcao == "Abandono":
                     except Exception as e:
                         st.warning(f"⚠️ Não foi possível processar as datas: {e}")
 
-                # Remove fidelizados
                 df_kpi = df_kpi[~df_kpi[col_whatsapp_kpi].isin(df_fid[col_whatsapp_fid])]
-
-                # Filtros
                 col_obs = next((c for c in df_kpi.columns if str(c).strip().lower() == "observação"), None)
                 filtro_medio = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio", case=False, na=False)]
                 filtro_fundamental = df_kpi[df_kpi[col_obs].astype(str).str.contains("Fundamental", case=False, na=False)]
                 base_pronta = pd.concat([filtro_medio, filtro_fundamental], ignore_index=True)
-
                 col_carteiras = next((c for c in base_pronta.columns if str(c).strip().lower() == "carteiras"), None)
                 if col_carteiras:
                     termos_excluir = ["SAC - Pós Venda", "Secretaria"]
                     base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(termos_excluir)]
-
                 col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
                 if col_contato:
                     base_pronta[col_contato] = base_pronta[col_contato].apply(processar_nome)
-
                 mapping = {col_contato: "Nome", col_whatsapp_kpi: "Numero", col_obs: "Tipo"}
                 base_pronta = base_pronta.rename(columns=mapping)[["Nome", "Numero", "Tipo"]]
                 base_pronta = base_pronta.drop_duplicates(subset=["Numero"], keep="first")
 
-                # Layout para importação
                 layout_colunas = [
                     "TIPO_DE_REGISTRO", "VALOR_DO_REGISTRO", "MENSAGEM", "NOME_CLIENTE",
                     "CPFCNPJ", "CODCLIENTE", "TAG", "CORINGA1", "CORINGA2", "CORINGA3",
@@ -183,7 +187,6 @@ if opcao == "Abandono":
                 base_importacao["TIPO_DE_REGISTRO"] = "TELEFONE"
                 base_importacao = base_importacao[layout_colunas]
 
-                # Ajuste final nos números
                 def limpar_numero_final(num):
                     num_limpo = re.sub(r"\D", "", str(num))
                     num_limpo = num_limpo.lstrip("0")
