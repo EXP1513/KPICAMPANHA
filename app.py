@@ -88,7 +88,7 @@ section[data-testid="stSidebar"] {
 st.sidebar.title("📋 Selecione o tipo de campanha")
 opcao = st.sidebar.radio(
     "",
-    ["🏚️ Abandono", "🛒👋 Carrinho Abandonado"]
+    ["❌👋  Abandono", "🛒👋 Carrinho Abandonado"]
 )
 
 # --- Funções utilitárias ---
@@ -246,3 +246,4 @@ elif opcao == "🛒👋 Carrinho Abandonado":
             🚧 Em construção... Em breve será possível gerar a base de Carrinho Abandonado.
         </div>
     """, unsafe_allow_html=True)
+
