@@ -5,7 +5,7 @@ import re
 
 st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# ---------- CSS identidade visual ----------
+# ---------- CSS visual + tradução de textos automáticos ----------
 st.markdown("""
 <style>
 body, .stApp {
@@ -78,6 +78,70 @@ section[data-testid="stSidebar"] {
     color: #222;
     box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }
+/* Tradução dos textos padrão do Streamlit */
+button[title="Browse files"]::after {
+    content: " Selecionar arquivo";
+    color: #06643b;
+    font-size: 1.1em;
+    font-weight:bold;
+}
+button[title="Browse files"] > div > p {
+    visibility: hidden;
+}
+.stFileUploader label div, .stFileUploader label, .stFileUploader p {
+    font-size: 1.1em !important;
+    color: #06643b !important;
+    font-weight: bold;
+}
+[data-testid="stFileUploadDropzoneInstructions"] {
+    visibility: hidden;
+    position: relative;
+}
+[data-testid="stFileUploadDropzoneInstructions"]::after {
+    content: "Arraste o arquivo aqui";
+    position: absolute;
+    left: 16px;
+    top: 6px;
+    color: #06643b;
+    font-size: 1.05em;
+    font-weight: bold;
+}
+.stDownloadButton button::after {
+    content: " Baixar arquivo";
+}
+div[data-testid="stNotificationContent"] {
+    font-size: 1.07em!important;
+}
+.stDataFrameHeaderCell, .stTable tbody th {
+    color: #018a62 !important;
+    font-size: 1em !important;
+    font-weight: bold;
+}
+/* Tradução das tabelas e pesquisas das tabelas */
+[data-testid="stDataFrameSearchInput"] input {
+    font-size: 1em !important;
+}
+[data-testid="stDataFrameSearchInput"] label {
+    visibility: hidden;
+}
+[data-testid="stDataFrameSearchInput"]::before {
+    content: "Filtrar:";
+    color: #018a62;
+    font-weight: bold;
+    margin-right:7px;
+    font-size:1.02em;
+}
+[data-testid="stDataFrameToolbarRowsCount"]{
+    visibility:hidden;
+}
+[data-testid="stDataFrameToolbarRowsCount"]::after {
+    content: "Linhas exibidas:";
+    color: #018a62;
+    font-size: 0.98em;
+    margin-right:5px;
+    font-weight: bold;
+    visibility: visible;
+}
 @media (max-width: 700px){
     .titulo-principal, .manual-popup, .manual-inicio, .card-importacao {max-width:95vw; padding:18px 8vw 14px 8vw;}
 }
@@ -88,7 +152,7 @@ section[data-testid="stSidebar"] {
 st.sidebar.title("📋 Selecione o tipo de campanha")
 opcao = st.sidebar.radio(
     "",
-    ["❌👋  Abandono", "🛒👋 Carrinho Abandonado"]
+    ["❌👋 Abandono", "🛒👋 Carrinho Abandonado"]
 )
 
 # --- Funções utilitárias ---
@@ -116,11 +180,8 @@ def identificar_base_fidelizados(df):
 
 def processar_nome(valor, numero):
     texto_original = str(valor).strip()
-    # Só pega até o primeiro espaço (primeira palavra)
     primeiro_nome = texto_original.split(' ')[0]
-    # Remove caracteres especiais
     nome_limpo = re.sub(r'[^a-zA-ZÀ-ÿ]', '', primeiro_nome)
-    # Se tamanho entre 0...3 e tem telefone, vira Candidato
     if len(nome_limpo) <= 3 and str(numero).strip():
         return "Candidato"
     if not nome_limpo:
@@ -133,7 +194,7 @@ def limpar_numero_final(num):
     return "55" + num_limpo
 
 # --- Página principal ---
-if opcao == "🏚️ Abandono":
+if opcao == "❌👋 Abandono":
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
     st.markdown("""
         <div class='manual-inicio'>
@@ -199,7 +260,6 @@ if opcao == "🏚️ Abandono":
                     base_pronta = base_pronta[~base_pronta[col_carteiras].astype(str).str.strip().isin(["SAC - Pós Venda", "Secretaria"])]
                 col_contato = next((c for c in base_pronta.columns if str(c).strip().lower() == "contato"), None)
                 if col_contato:
-                    # Aplica validando nome e número conforme a regra
                     base_pronta[col_contato] = [
                         processar_nome(nome, numero)
                         for nome, numero in zip(base_pronta[col_contato], base_pronta[col_wpp_kpi])
@@ -246,4 +306,3 @@ elif opcao == "🛒👋 Carrinho Abandonado":
             🚧 Em construção... Em breve será possível gerar a base de Carrinho Abandonado.
         </div>
     """, unsafe_allow_html=True)
-
