@@ -5,7 +5,7 @@ import re
 
 st.set_page_config(page_title="Gera Campanha🚀", layout="centered")
 
-# ---------- CSS: identidade visual igual ao site das imagens ----------
+# --------- CSS identidade visual igual ao site da foto ---------
 st.markdown("""
 <style>
 body, .stApp {
@@ -84,14 +84,14 @@ section[data-testid="stSidebar"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Menu lateral com emojis identicos à foto ----------
+# --------- Menu lateral com emojis PTBR ---------
 st.sidebar.title("📋 Selecione o tipo de campanha")
 opcao = st.sidebar.radio(
     "",
     ["🏚️ Abandono", "🛒👋 Carrinho Abandonado"]
 )
 
-# ---------- Funções corretas ----------
+# --------- Funções utilitárias ---------
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
@@ -116,6 +116,11 @@ def identificar_base_fidelizados(df):
 
 def processar_nome(valor):
     texto_original = str(valor).strip()
+    # Se o nome contém número e tem até 3 caracteres, ou está vazio, devolve Candidato
+    possui_numero = any(char.isdigit() for char in texto_original)
+    tamanho = len(texto_original)
+    if possui_numero and tamanho <= 3:
+        return "Candidato"
     nome_limpo = re.sub(r'[^a-zA-ZÀ-ÿ0-9\s]', '', texto_original)
     nome_limpo = re.sub(r'\s+', ' ', nome_limpo).strip()
     if not nome_limpo:
@@ -127,7 +132,7 @@ def limpar_numero_final(num):
     num_limpo = num_limpo.lstrip("0")
     return "55" + num_limpo
 
-# ---------- Página principal igual layout da foto ----------
+# --------- Página principal ---------
 if opcao == "🏚️ Abandono":
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
 
@@ -141,7 +146,6 @@ if opcao == "🏚️ Abandono":
         </div>
     """, unsafe_allow_html=True)
 
-    # Card branco para upload das bases
     st.markdown("""
         <div class='card-importacao'>
             <h5>Importe as bases aqui</h5>
@@ -153,7 +157,6 @@ if opcao == "🏚️ Abandono":
         file_fid = st.file_uploader("📥 Base Fidelizados", type=["xlsx", "csv"], key="FID")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Processamento conforme padrão
     if file_kpi and file_fid:
         df_kpi = read_file(file_kpi)
         df_fid = read_file(file_fid)
@@ -193,7 +196,6 @@ if opcao == "🏚️ Abandono":
                         st.warning(f"⚠️ Não foi possível processar datas: {e}")
 
                 df_kpi = df_kpi[~df_kpi[col_wpp_kpi].isin(df_fid[col_wpp_fid])]
-
                 col_obs = next((c for c in df_kpi.columns if str(c).strip().lower() == "observação"), None)
                 base_pronta = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio|Fundamental", case=False, na=False)]
 
@@ -230,19 +232,19 @@ if opcao == "🏚️ Abandono":
                         <h4>📤 Próximos passos – Importar na Robbu</h4>
                         <p><strong>Baixe o arquivo gerado acima (<em>{nome_arquivo}</em>) e siga:</strong></p>
                         <ol>
-                            <li>No Robbu, vá em <strong>"Público"</strong> &rarr; <strong>"Importar Público"</strong></li>
-                            <li>Na descrição, escreva <b>"Abandono"</b> e data</li>
-                            <li>Escolha segmento <strong>"Distribuição Manual"</strong></li>
+                            <li>No Robbu, vá em <strong>Público</strong> e clique <strong>Importar Público</strong></li>
+                            <li>Na descrição, informe <strong>Abandono</strong> e a data</li>
+                            <li>Escolha o segmento <strong>Distribuição Manual</strong></li>
                             <li>Importe o arquivo gerado</li>
                             <li>Marque autorização de processamento/comunicação</li>
-                            <li>Tipo autorização: <strong>"Consentimento"</strong></li>
-                            <li>Marcar <strong>"Manter apenas neste segmento"</strong></li>
+                            <li>Tipo de autorização: <strong>Consentimento</strong></li>
+                            <li>Marque <strong>Manter apenas neste segmento</strong></li>
                             <li>Clique <strong>Importar</strong> e aguarde a confirmação</li>
                         </ol>
                     </div>
                 """, unsafe_allow_html=True)
 
-    st.markdown("<h4 style='color:#fff; margin-top:28px; text-align:center;'>POR DENTRO DA BASE</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color:#077339; margin-top:28px; text-align:center;'>POR DENTRO DA BASE</h4>", unsafe_allow_html=True)
     if 'base_importacao' in locals():
         st.dataframe(base_importacao)
 
