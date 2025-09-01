@@ -3,6 +3,7 @@ import pandas as pd
 import re
 from io import BytesIO
 from datetime import datetime, timedelta
+import csv
 
 st.set_page_config(page_title="Gera Campanha - Abandono & Carrinho", layout="centered")
 
@@ -71,16 +72,23 @@ section[data-testid="stSidebar"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ======= Funções utilitárias =======
+# Função robusta para ler arquivos CSV detectando o separador
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
     if f.name.lower().endswith(".csv"):
         try:
-            return pd.read_csv(data_io, encoding="utf-8", sep=None, engine="python")
+            sample = bytes_data[:1024].decode("utf-8", errors="ignore")
+            try:
+                dialect = csv.Sniffer().sniff(sample)
+                sep = dialect.delimiter
+            except Exception:
+                sep = ',' if ',' in sample else ';'
+            data_io.seek(0)
+            return pd.read_csv(data_io, encoding="utf-8", sep=sep, engine="python")
         except UnicodeDecodeError:
             data_io.seek(0)
-            return pd.read_csv(data_io, encoding="ISO-8859-1", sep=None, engine="python")
+            return pd.read_csv(data_io, encoding="ISO-8859-1", sep=sep, engine="python")
     else:
         return pd.read_excel(data_io)
 
@@ -100,7 +108,6 @@ def tratar_numero_telefone(num):
     num_str = re.sub(r'\D', '', str(num)).lstrip('0')
     return '55' + num_str if num_str else ''
 
-# === Funções Carrinho ===
 def limpar_nome_carrinho(nome):
     return re.sub(r'[^A-Za-zÀ-ÖØ-öø-ÿ\s]', '', str(nome))
 
@@ -169,22 +176,18 @@ def aba_abandono():
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
     file_kpi = st.file_uploader("📂 Base KPI", type=["xlsx","csv"], key="kpi_file")
     file_fid = st.file_uploader("📂 Base Fidelizados", type=["xlsx","csv"], key="fid_file")
-
     if file_kpi and file_fid:
         df_kpi = read_file(file_kpi)
         df_fid = read_file(file_fid)
-
         col_wpp_kpi = localizar_coluna(df_kpi, "whatsapp principal")
         col_wpp_fid = localizar_coluna(df_fid, "whatsapp principal")
         col_obs = localizar_coluna(df_kpi, "observação")
         col_carteiras = localizar_coluna(df_kpi, "carteiras")
         col_contato = localizar_coluna(df_kpi, "contato")
         col_data_evento = localizar_coluna(df_kpi, "data evento")
-
         if not all([col_wpp_kpi, col_wpp_fid, col_obs, col_contato]):
             st.error("❌ Colunas obrigatórias não encontradas.")
             st.stop()
-
         # Limpeza e filtros
         df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].astype(str).str.strip().apply(lambda x: re.sub(r'^0+', '', x))
         df_kpi = df_kpi[~df_kpi[col_wpp_kpi].isin(df_fid[col_wpp_fid])]
@@ -192,15 +195,12 @@ def aba_abandono():
         if col_carteiras:
             df_kpi = df_kpi[~df_kpi[col_carteiras].isin(["SAC - Pós Venda", "Secretaria"])]
         df_kpi[col_contato] = df_kpi[col_contato].apply(processar_nome_abandono)
-
         base_pronta = df_kpi.rename(columns={col_contato: "Nome", col_wpp_kpi: "Numero"}).drop_duplicates(subset=["Numero"], keep="first")
-
         layout = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         base_export = pd.DataFrame(columns=layout)
         base_export["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(tratar_numero_telefone)
         base_export["NOME_CLIENTE"] = base_pronta["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         base_export["TIPO_DE_REGISTRO"] = "TELEFONE"
-
         # Bloqueio de contatos específicos
         email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com"
         numeros_bloqueados = {re.sub(r'\D', '', "(21) 96999-9549"), "5521969999549"}
@@ -208,16 +208,12 @@ def aba_abandono():
             ~(base_export["VALOR_DO_REGISTRO"].isin(numeros_bloqueados)) &
             ~(base_export["NOME_CLIENTE"].str.lower() == email_bloqueado.lower())
         ]
-
         # Remove duplicatas e vazios
         base_export = base_export.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         base_export = base_export[base_export["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
-
         total_leads = len(base_export)
         nome_arquivo = gerar_nome_arquivo_abandono(df_kpi, col_data_evento)
-
         st.success(f"✅ Base de abandono pronta! Total de Leads Gerados: {total_leads}")
-
         output = BytesIO()
         base_export.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
@@ -230,27 +226,21 @@ def aba_carrinho():
     file_carrinho = st.file_uploader("📂 Carrinho Abandonado", type=["xlsx","csv"], key="carrinho_file")
     file_nao_pagos = st.file_uploader("📂 Não Pagos", type=["xlsx","csv"], key="naopagos_file")
     file_pedidos = st.file_uploader("📂 Pedidos", type=["xlsx","csv"], key="pedidos_file")
-
     if file_carrinho and file_nao_pagos and file_pedidos:
         df_carrinho = importar_excel_tratamento_carrinho(read_file(file_carrinho))
         df_nao_pagos = importar_excel_tratamento_nao_pagos(read_file(file_nao_pagos))
         df_pedidos = read_file(file_pedidos)
-
         df_unificado = pd.concat([df_carrinho, df_nao_pagos], ignore_index=True)
-
         if 'E-mail (cobrança)' in df_pedidos.columns:
             emails_unif = df_unificado['e-mail'].str.strip().str.lower()
             emails_ped = df_pedidos['E-mail (cobrança)'].astype(str).str.strip().str.lower()
             df_unificado = df_unificado[~emails_unif.isin(emails_ped)]
-
         df_unificado = df_unificado[['Nome','Numero']]
-
         layout_cols = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         df_saida = pd.DataFrame(columns=layout_cols)
         df_saida["VALOR_DO_REGISTRO"] = df_unificado["Numero"]
         df_saida["NOME_CLIENTE"] = df_unificado["Nome"].astype(str).str.strip().str.lower().str.capitalize()
         df_saida["TIPO_DE_REGISTRO"] = df_saida["VALOR_DO_REGISTRO"].apply(lambda x: "TELEFONE" if str(x).strip() != "" else "")
-
         # Bloqueio de contatos específicos
         email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com"
         numeros_bloqueados = {re.sub(r'\D', '', "(21) 96999-9549"), "5521969999549"}
@@ -258,16 +248,12 @@ def aba_carrinho():
             ~(df_saida["VALOR_DO_REGISTRO"].isin(numeros_bloqueados)) &
             ~(df_saida["NOME_CLIENTE"].str.lower() == email_bloqueado.lower())
         ]
-
         # Remove duplicatas e vazios
         df_saida = df_saida.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         df_saida = df_saida[df_saida["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
-
         qtd_total_final = len(df_saida)
         nome_arquivo = gerar_nome_arquivo_carrinho()
-
         st.success(f"✅ Base Carrinho pronta! Total de Leads Gerados: {qtd_total_final}")
-
         output = BytesIO()
         df_saida.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
