@@ -4,133 +4,133 @@ import chardet
 import re
 import base64
 
-# CSS para título principal
-css = '''
-<style>
-.titulo-principal {
-    color: #0066cc;
-    font-size: 30px;
-    font-weight: 700;
-    text-align: center;
-    padding-top: 20px;
-    padding-bottom: 10px;
-}
-</style>
-'''
-st.markdown(css, unsafe_allow_html=True)
-
 def detect_separator_and_encoding(uploaded_file):
     content = uploaded_file.read()
     uploaded_file.seek(0)
-    result = chardet.detect(content)
-    encoding = result['encoding']
+    detected = chardet.detect(content)
+    encoding = detected['encoding']
     sample = content.decode(encoding, errors='ignore').splitlines()
     separators = [',', ';', '\t', '|']
     counts = {sep: sum(line.count(sep) for line in sample[:10]) for sep in separators}
-    separator = max(counts, key=counts.get)
-    return separator, encoding
+    sep = max(counts, key=counts.get)
+    return sep, encoding
 
 def read_file(uploaded_file):
-    if uploaded_file.name.lower().endswith(('.xls', '.xlsx')):
+    if uploaded_file.name.endswith(('.xls', '.xlsx')):
         return pd.read_excel(uploaded_file)
     else:
         sep, encoding = detect_separator_and_encoding(uploaded_file)
         return pd.read_csv(uploaded_file, sep=sep, encoding=encoding)
 
-def rename_columns_to_standard(df, standard_columns):
+def rename_columns(df, standard_columns):
     mapping = {}
-    lower_standard = [c.lower().strip() for c in standard_columns]
+    lower_std_cols = [c.lower() for c in standard_columns]
     for col in df.columns:
-        col_check = col.lower().strip()
-        if col_check in lower_standard:
-            idx = lower_standard.index(col_check)
-            mapping[col] = standard_columns[idx]
+        col_lower = col.lower().strip()
+        if col_lower in lower_std_cols:
+            mapping[col] = standard_columns[lower_std_cols.index(col_lower)]
     return df.rename(columns=mapping)
 
-def process_phone_number(num):
-    num_str = str(num).strip()
-    num_str = re.sub(r'^0+', '', num_str)  # remove leading zeros
-    num_str = re.sub(r'\D', '', num_str)   # remove non-digit chars
-    return num_str
+def clean_phone(phone):
+    phone = str(phone).strip()
+    phone = re.sub(r'^0+', '', phone)
+    phone = re.sub(r'\D', '', phone)
+    return phone
 
-def process_contact_name(name):
+def clean_name(name):
     if pd.isna(name):
         return name
-    name_str = str(name)
-    if name_str.lower().startswith('me'):
+    if str(name).lower().startswith('me'):
         return 'Cliente Abandono'
-    return name_str
+    return name
 
-def app():
-    st.title("Relatório Campanha de Abandono")
+def main():
+    st.markdown(\"\"\"<style>
+    .titulo-principal {
+        color: #0066cc;
+        font-size: 30px;
+        font-weight: 700;
+        text-align: center;
+        padding-top: 20px;
+        padding-bottom: 10px;
+    }
+    </style>\"\"\", unsafe_allow_html=True)
 
-    # Standard columns for KPI and Fidelizados based on the attached files
+    st.markdown('<div class=\"titulo-principal\">Campanha de Abandono - Importar Arquivos</div>', unsafe_allow_html=True)
+
+    kpi_file = st.file_uploader('Enviar arquivo KPI (.csv ou .xlsx)', type=['csv','xlsx'])
+    fid_file = st.file_uploader('Enviar arquivo Fidelizados (.csv ou .xlsx)', type=['csv','xlsx'])
+
+    if not kpi_file or not fid_file:
+        st.info('Por favor, envie ambos os arquivos para processar.')
+        return
+
+    # Colunas padrão (idênticas ao arquivo anexado)
     kpi_columns = [
-        "Data Evento", "Descrição Evento", "Tipo Evento", "Evento Finalizador", "Contato",
-        "Identificação", "Código Contato", "Hashtag", "Usuário", "Número Protocolo",
-        "Data Hora Geração Protocolo", "Observação", "SMS Principal", "Whatsapp Principal",
-        "Email Principal", "Canal", "Carteiras", "Carteira do Evento", "Valor da oportunidade",
-        "Identificador da chamada Voz"
+        'Data Evento', 'Descrição Evento', 'Tipo', 'Evento Finalizador', 'Contato',
+        'Identificação', 'Código Contato', 'Hashtag', 'Usuário', 'Número Protocolo',
+        'Data Hora Geração Protocolo', 'Observação', 'SMS Principal', 'Whatsapp Principal',
+        'Email Principal', 'Canal', 'Carteiras', 'Carteira do Evento',
+        'Valor da oportunidade', 'Identificador da chamada Voz'
     ]
 
-    fidelizados_columns = [
-        "Usuário Fidelizado", "Contato", "Identificação", "Código", "Canal",
-        "Último Contato", "Qtd. Mensagens Pendentes", "SMS Principal", "Whatsapp Principal",
-        "Email Principal", "Segmentos vinculados pessoa", "Agendado",
-        "Data Hora Agendamento", "Ultimo Evento", "Ultimo Evento Finalizador"
+    fid_columns = [
+        'Usuário Fidelizado', 'Contato', 'Identificação', 'Código', 'Canal', 'Último Contato',
+        'Qtd. Mensagens Pendentes', 'SMS Principal', 'Whatsapp Principal',
+        'Email Principal', 'Segmentos vinculados pessoa', 'Agendado',
+        'Data Hora Agendamento', 'Ultimo Evento', 'Ultimo Evento Finalizador'
     ]
 
-    st.markdown('<div class="titulo-principal">Importar Bases</div>', unsafe_allow_html=True)
+    df_kpi = read_file(kpi_file)
+    df_fid = read_file(fid_file)
 
-    kpi_file = st.file_uploader("Arquivo KPI", type=["csv", "xlsx"], key="kpi")
-    fid_file = st.file_uploader("Arquivo Fidelizados", type=["csv", "xlsx"], key="fid")
+    df_kpi = rename_columns(df_kpi, kpi_columns)
+    df_fid = rename_columns(df_fid, fid_columns)
 
-    if kpi_file and fid_file:
-        df_kpi = read_file(kpi_file)
-        df_fid = read_file(fid_file)
+    # Validar colunas obrigatórias
+    required_kpi_cols = ['Contato', 'Whatsapp Principal', 'Observação']
+    required_fid_cols = ['Whatsapp Principal']
 
-        # Rename columns to exact standard names
-        df_kpi = rename_columns_to_standard(df_kpi, kpi_columns)
-        df_fid = rename_columns_to_standard(df_fid, fidelizados_columns)
+    missing_kpi = [c for c in required_kpi_cols if c not in df_kpi.columns]
+    missing_fid = [c for c in required_fid_cols if c not in df_fid.columns]
 
-        # Find required columns by name
-        kpi_wpp_col = [c for c in df_kpi.columns if "Whatsapp Principal" in c][0]
-        kpi_obs_col = [c for c in df_kpi.columns if "Observação" in c][0]
-        kpi_contato_col = [c for c in df_kpi.columns if c == "Contato"][0]
+    if missing_kpi:
+        st.error(f'Colunas obrigatórias da KPI ausentes: {missing_kpi}')
+        return
+    if missing_fid:
+        st.error(f'Colunas obrigatórias da Fidelizados ausentes: {missing_fid}')
+        return
 
-        fid_wpp_col = [c for c in df_fid.columns if "Whatsapp Principal" in c][0]
+    # Limpar telefone
+    df_kpi['Whatsapp Principal'] = df_kpi['Whatsapp Principal'].apply(clean_phone)
+    df_fid['Whatsapp Principal'] = df_fid['Whatsapp Principal'].apply(clean_phone)
 
-        # Normalize phone numbers removing leading zeros and non-digit chars
-        df_kpi[kpi_wpp_col] = df_kpi[kpi_wpp_col].apply(process_phone_number)
-        df_fid[fid_wpp_col] = df_fid[fid_wpp_col].apply(process_phone_number)
+    # Selecionar clientes não fidelizados
+    df_abandon = df_kpi[~df_kpi['Whatsapp Principal'].isin(df_fid['Whatsapp Principal'])]
 
-        # Filter KPI records that are NOT in Fidelizados (phone number)
-        df_filtered = df_kpi[~df_kpi[kpi_wpp_col].isin(df_fid[fid_wpp_col])]
+    # Filtrar escolaridade na observação
+    df_abandon = df_abandon[df_abandon['Observação'].str.contains('médio|fundamental', case=False, na=False)]
 
-        # Keep only customers with schooling "Médio" or "Fundamental" in the observation column
-        df_filtered = df_filtered[df_filtered[kpi_obs_col].astype(str).str.contains("médio|fundamental", case=False, na=False)]
+    # Excluir carteiras indesejadas caso exista a coluna
+    if 'Carteiras' in df_abandon.columns:
+        df_abandon = df_abandon[~df_abandon['Carteiras'].isin(['SAC - Pós Venda', 'Secretaria'])]
 
-        # Optional: exclude certain 'Carteiras' if exists - uncomment and adjust if needed
-        # if 'Carteiras' in df_filtered.columns:
-        #     df_filtered = df_filtered[~df_filtered['Carteiras'].isin(['SAC - Pós Venda', 'Secretaria'])]
+    # Ajustar nomes para abandono
+    df_abandon['Contato'] = df_abandon['Contato'].apply(clean_name)
 
-        # Process contact names: replace if name starts with "Me"
-        df_filtered[kpi_contato_col] = df_filtered[kpi_contato_col].apply(process_contact_name)
+    # Gerar dataframe final com colunas renomeadas para Exportar
+    df_final = df_abandon[['Contato', 'Whatsapp Principal']].copy()
+    df_final.rename(columns={'Contato': 'Nome', 'Whatsapp Principal': 'Número'}, inplace=True)
+    df_final.drop_duplicates(subset=['Número'], inplace=True)
+    df_final.reset_index(drop=True, inplace=True)
 
-        # Prepare final dataframe with columns renamed
-        df_final = df_filtered[[kpi_contato_col, kpi_wpp_col]].copy()
-        df_final = df_final.rename(columns={kpi_contato_col: "Nome", kpi_wpp_col: "Número"})
-        df_final = df_final.drop_duplicates(subset=["Número"]).reset_index(drop=True)
+    st.subheader(f'Total de clientes para campanha de abandono: {len(df_final)}')
+    st.dataframe(df_final)
 
-        st.subheader(f"Clientes para campanha de abandono ({len(df_final)})")
-        st.dataframe(df_final)
+    # Link download CSV
+    csv = df_final.to_csv(index=False, encoding='utf-8')
+    b64 = base64.b64encode(csv.encode()).decode()
+    st.markdown(f'<a href=\"data:file/csv;base64,{b64}\" download=\"campanha_abandono.csv\">📥 Baixar CSV</a>', unsafe_allow_html=True)
 
-        # Prepare CSV for download
-        csv = df_final.to_csv(index=False, encoding="utf-8")
-        b64 = base64.b64encode(csv.encode()).decode()
-        href = f'<a href="data:file/csv;base64,{b64}" download="campanha_abandono.csv">📥 Baixar arquivo CSV</a>'
-        st.markdown(href, unsafe_allow_html=True)
-
-
-if __name__ == "__main__":
-    app()
+if __name__ == '__main__':
+    main()
