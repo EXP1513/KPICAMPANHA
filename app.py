@@ -112,14 +112,8 @@ def read_file(f):
     else:
         return pd.read_excel(data_io)
 
-# Função para localizar coluna com nome normalizado e cuidado com espaços e caracteres invisíveis
 def localizar_coluna(df, nome):
-    nome = nome.lower().strip()
-    for c in df.columns:
-        c_limpo = str(c).lower().strip()
-        if c_limpo == nome:
-            return c
-    return None
+    return next((c for c in df.columns if str(c).strip().lower() == nome.lower()), None)
 
 def processar_nome_abandono(valor):
     texto_original = str(valor).strip()
@@ -204,12 +198,7 @@ def aba_abandono():
     file_fid = st.file_uploader("📂 Base Fidelizados", type=["xlsx","csv"], key="fid_file")
     if file_kpi and file_fid:
         df_kpi = read_file(file_kpi)
-        df_kpi.columns = df_kpi.columns.str.strip().str.replace('\n','').str.replace('\r','').str.replace('\t','')
         df_fid = read_file(file_fid)
-        df_fid.columns = df_fid.columns.str.strip().str.replace('\n','').str.replace('\r','').str.replace('\t','')
-        # DEBUG: mostrar colunas para verificação
-        st.write("Colunas Base KPI:", df_kpi.columns.tolist())
-        st.write("Colunas Base Fidelizados:", df_fid.columns.tolist())
         col_wpp_kpi = localizar_coluna(df_kpi, "whatsapp principal")
         col_wpp_fid = localizar_coluna(df_fid, "whatsapp principal")
         col_obs = localizar_coluna(df_kpi, "observação")
@@ -261,7 +250,6 @@ def aba_carrinho():
         df_carrinho = importar_excel_tratamento_carrinho(read_file(file_carrinho))
         df_nao_pagos = importar_excel_tratamento_nao_pagos(read_file(file_nao_pagos))
         df_pedidos = read_file(file_pedidos)
-        df_pedidos.columns = df_pedidos.columns.str.strip().str.replace('\n','').str.replace('\r','').str.replace('\t','')
         df_unificado = pd.concat([df_carrinho, df_nao_pagos], ignore_index=True)
         if 'E-mail (cobrança)' in df_pedidos.columns:
             emails_unif = df_unificado['e-mail'].str.strip().str.lower()
@@ -299,3 +287,4 @@ if aba == "Campanha de Abandono":
     aba_abandono()
 else:
     aba_carrinho()
+
