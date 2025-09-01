@@ -72,10 +72,12 @@ section[data-testid="stSidebar"] {
 </style>
 """, unsafe_allow_html=True)
 
-# Função robusta para ler arquivos CSV detectando o separador
+# Função robusta para ler arquivos CSV detectando o separador e tratando erros
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
+    sep = ','  # Valor padrão
+
     if f.name.lower().endswith(".csv"):
         try:
             sample = bytes_data[:1024].decode("utf-8", errors="ignore")
@@ -85,10 +87,28 @@ def read_file(f):
             except Exception:
                 sep = ',' if ',' in sample else ';'
             data_io.seek(0)
-            return pd.read_csv(data_io, encoding="utf-8", sep=sep, engine="python")
+            try:
+                return pd.read_csv(
+                    data_io,
+                    encoding="utf-8",
+                    sep=sep,
+                    on_bad_lines='warn'  # Ignora linhas problemáticas, avisa
+                )
+            except pd.errors.ParserError as e:
+                st.error(f"Erro ao ler o CSV: {e}. Verifique se o arquivo está bem formatado.")
+                st.stop()
         except UnicodeDecodeError:
             data_io.seek(0)
-            return pd.read_csv(data_io, encoding="ISO-8859-1", sep=sep, engine="python")
+            try:
+                return pd.read_csv(
+                    data_io,
+                    encoding="ISO-8859-1",
+                    sep=sep,
+                    on_bad_lines='warn'
+                )
+            except pd.errors.ParserError as e:
+                st.error(f"Erro ao ler o CSV com encoding ISO: {e}. Verifique se o arquivo está bem formatado.")
+                st.stop()
     else:
         return pd.read_excel(data_io)
 
@@ -262,6 +282,7 @@ def aba_carrinho():
 
 # ========= Menu ==========
 aba = st.sidebar.selectbox("Selecione a campanha", ["Campanha de Abandono", "Carrinho Abandonado"])
+
 if aba == "Campanha de Abandono":
     aba_abandono()
 else:
