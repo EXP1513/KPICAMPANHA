@@ -76,38 +76,22 @@ section[data-testid="stSidebar"] {
 def read_file(f):
     bytes_data = f.read()
     data_io = BytesIO(bytes_data)
-    sep = ','  # Valor padrão
+    
     if f.name.lower().endswith(".csv"):
+        sep = ';'  # separador correto do seu CSV
+        encoding = "ISO-8859-1"  # encoding correto para acentos
+        data_io.seek(0)
         try:
-            sample = bytes_data[:1024].decode("utf-8", errors="ignore")
-            try:
-                dialect = csv.Sniffer().sniff(sample)
-                sep = dialect.delimiter
-            except Exception:
-                sep = ',' if ',' in sample else ';'
-            data_io.seek(0)
-            try:
-                return pd.read_csv(
-                    data_io,
-                    encoding="utf-8",
-                    sep=sep,
-                    on_bad_lines='warn'  # Ignora linhas problemáticas, avisa
-                )
-            except pd.errors.ParserError as e:
-                st.error(f"Erro ao ler o CSV: {e}. Verifique se o arquivo está bem formatado.")
-                st.stop()
-        except UnicodeDecodeError:
-            data_io.seek(0)
-            try:
-                return pd.read_csv(
-                    data_io,
-                    encoding="ISO-8859-1",
-                    sep=sep,
-                    on_bad_lines='warn'
-                )
-            except pd.errors.ParserError as e:
-                st.error(f"Erro ao ler o CSV com encoding ISO: {e}. Verifique se o arquivo está bem formatado.")
-                st.stop()
+            return pd.read_csv(
+                data_io,
+                sep=sep,
+                encoding=encoding,
+                on_bad_lines='warn',
+                engine='python'
+            )
+        except pd.errors.ParserError as e:
+            print(f"Erro ao ler o CSV: {e}. Verifique se o arquivo está bem formatado.")
+            return None
     else:
         return pd.read_excel(data_io)
 
