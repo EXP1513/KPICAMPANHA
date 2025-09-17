@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Gera Campanha - Abandono & Carrinho", layout="centered")
 
-# --- CSS personalizado ---
+##--- CSS personalizado ---
 st.markdown("""
 <style>
 body, .stApp {
@@ -50,14 +50,13 @@ section[data-testid="stSidebar"] {
 </style>
 """, unsafe_allow_html=True)
 
-# --- Função robusta para leitura de arquivos ---
+##--- Função robusta para leitura de arquivos ---
 def read_file(f):
     try:
         bytes_data = f.read()
         data_io = BytesIO(bytes_data)
         data_io.seek(0)
         if f.name.lower().endswith('.csv'):
-            # Detect encoding ou use o padrão local
             try:
                 return pd.read_csv(data_io, sep=';', encoding='ISO-8859-1', on_bad_lines='warn', engine='python')
             except Exception:
@@ -72,11 +71,10 @@ def read_file(f):
         st.error(f"Erro ao ler arquivo: {e}")
         return None
 
-# Utilitário de localização flexível de coluna
 def localizar_coluna(df, nome):
     return next((c for c in df.columns if str(c).strip().lower() == nome.lower()), None)
 
-# --- Funções de tratamento padronizadas ---
+##--- Funções de tratamento ---
 def processar_nome_abandono(valor):
     texto_original = str(valor).strip()
     primeiro_nome = texto_original.split(' ')[0]
@@ -95,23 +93,32 @@ def tratar_nome_carrinho(row):
     nome = str(row['Nome']).strip()
     return "Candidato" if len(nome) in [0,1,2,3] and pd.notna(row['Numero']) and str(row['Numero']).strip() else nome.title()
 
-# --- Tratamento dos dados importados ---
+##--- Importar Carrinho com validação rigorosa ---
 def importar_excel_tratamento_carrinho(df):
-    cols = ['First-Name', 'Email', 'Phone']
-    df = df[[c for c in cols if c in df.columns]]
-    if 'First-Name' in df.columns:
-        df['First-Name'] = df['First-Name'].str.split(' ').str[0]
+    required = {'First-Name', 'Email', 'Phone'}
+    atual = set(df.columns)
+    faltando = required - atual
+    if faltando:
+        st.error(f"O arquivo Carrinho Abandonado está faltando as colunas: {', '.join(faltando)}")
+        st.stop()
+    df = df[list(required)]
+    df['First-Name'] = df['First-Name'].astype(str).str.split(' ').str[0]
     df.rename(columns={'First-Name': 'Nome', 'Email': 'e-mail', 'Phone': 'Numero'}, inplace=True)
     df['Nome'] = df['Nome'].apply(limpar_nome_carrinho)
     df['Nome'] = df.apply(tratar_nome_carrinho, axis=1)
     df['Numero'] = df['Numero'].apply(tratar_numero_telefone)
-    return df[['Nome','Numero','e-mail']]
+    return df[['Nome', 'Numero', 'e-mail']]
 
+##--- Importar Não Pagos com validação rigorosa ---
 def importar_excel_tratamento_nao_pagos(df):
-    cols = ['Nome completo (cobrança)', 'Telefone (cobrança)', 'E-mail (cobrança)']
-    df = df[[c for c in cols if c in df.columns]]
-    if 'Nome completo (cobrança)' in df.columns:
-        df['Nome completo (cobrança)'] = df['Nome completo (cobrança)'].str.split(' ').str[0]
+    required = {'Nome completo (cobrança)', 'Telefone (cobrança)', 'E-mail (cobrança)'}
+    atual = set(df.columns)
+    faltando = required - atual
+    if faltando:
+        st.error(f"O arquivo Não Pagos está faltando as colunas: {', '.join(faltando)}")
+        st.stop()
+    df = df[list(required)]
+    df['Nome completo (cobrança)'] = df['Nome completo (cobrança)'].astype(str).str.split(' ').str[0]
     df.rename(columns={
         'Nome completo (cobrança)': 'Nome',
         'Telefone (cobrança)': 'Numero',
@@ -120,9 +127,9 @@ def importar_excel_tratamento_nao_pagos(df):
     df['Nome'] = df['Nome'].apply(limpar_nome_carrinho)
     df['Nome'] = df.apply(tratar_nome_carrinho, axis=1)
     df['Numero'] = df['Numero'].apply(tratar_numero_telefone)
-    return df[['Nome','Numero','e-mail']]
+    return df[['Nome', 'Numero', 'e-mail']]
 
-# --- Geração dinâmica de nomes de arquivos ---
+##--- Nome do arquivo gerado ---
 def gerar_nome_arquivo_carrinho():
     hoje = datetime.now()
     dia_semana = hoje.weekday()
@@ -147,16 +154,14 @@ def gerar_nome_arquivo_abandono(df_kpi, col_data_evento):
             pass
     return "Abandono.csv"
 
-# --- Padronização de colunas das bases ---
+##--- Padronização de colunas para KPI/Fidelizados
 colunas_kpi_base = [
     'Data Evento', 'Descrição Evento', 'Tipo de Evento', 'Evento Finalizador', 'Contato', 'Identificação', 
     'Código Contato', 'Hashtag', 'Usuário', 'Número Protocolo', 'Data Hora Geração Protocolo', 'Observação', 
     'SMS Principal', 'Whatsapp Principal', 'Email Principal', 'Canal', 'Carteiras', 'Carteira do Evento', 
     'Valor da oportunidade', 'Identificador da chamada de Voz'
 ]
-
 def padronizar_colunas_kpi(df):
-    # Mapeia colunas pelo nome ignorando case e espaços
     col_mapping = {c: col for col in colunas_kpi_base for c in df.columns if c.lower().strip() == col.lower().strip()}
     df.rename(columns=col_mapping, inplace=True)
     return df[[col for col in colunas_kpi_base if col in df.columns]]
@@ -166,13 +171,12 @@ colunas_fid_base = [
     'SMS Principal', 'WhatsApp Principal', 'Email Principal', 'Segmentos vinculados a pessoa', 'Agendado', 
     'Data Hora Agendamento', 'Ultimo Evento', 'Ultimo Evento Finalizador'
 ]
-
 def padronizar_colunas_fid(df):
     col_mapping = {c: col for col in colunas_fid_base for c in df.columns if c.lower().strip() == col.lower().strip()}
     df.rename(columns=col_mapping, inplace=True)
     return df[[col for col in colunas_fid_base if col in df.columns]]
 
-# --- Aba Abandono ---
+##--- Aba Abandono
 def aba_abandono():
     st.markdown("<div class='titulo-principal'>Gera Campanha - Abandono</div>", unsafe_allow_html=True)
     file_kpi = st.file_uploader("📂 Base KPI", type=["xlsx","csv"], key="kpi_file")
@@ -180,7 +184,6 @@ def aba_abandono():
 
     if file_kpi and file_fid:
         df_kpi, df_fid = read_file(file_kpi), read_file(file_fid)
-
         if df_kpi is None or df_kpi.empty:
             st.error("Arquivo de KPI inválido ou está vazio.")
             return
@@ -197,23 +200,20 @@ def aba_abandono():
             st.error("❌ Colunas obrigatórias não encontradas.")
             return
 
-        # Filtros e processamento
+        # Processamento e filtros
         df_kpi[col_wpp_kpi] = df_kpi[col_wpp_kpi].astype(str).str.strip().apply(lambda x: re.sub(r'^0+', '', x))
         df_kpi = df_kpi[~df_kpi[col_wpp_kpi].isin(df_fid[col_wpp_fid])]
         df_kpi = df_kpi[df_kpi[col_obs].astype(str).str.contains("Médio|Fundamental", case=False, na=False)]
         if col_carteiras:
             df_kpi = df_kpi[~df_kpi[col_carteiras].isin(["SAC - Pós Venda", "Secretaria"])]
-
         df_kpi[col_contato] = df_kpi[col_contato].apply(processar_nome_abandono)
         base_pronta = df_kpi.rename(columns={col_contato: "Nome", col_wpp_kpi: "Numero"}).drop_duplicates(subset=["Numero"], keep="first")
-
         layout = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ","CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         base_export = pd.DataFrame(columns=layout)
         base_export["VALOR_DO_REGISTRO"] = base_pronta["Numero"].apply(tratar_numero_telefone)
         base_export["NOME_CLIENTE"] = base_pronta["Nome"].str.strip().str.lower().str.capitalize()
         base_export["TIPO_DE_REGISTRO"] = "TELEFONE"
 
-        # Bloqueio de contatos específicos e limpeza final
         email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com"
         numeros_bloqueados = {"5521969999549"}
         base_export = base_export[
@@ -222,7 +222,6 @@ def aba_abandono():
         ]
         base_export = base_export.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         base_export = base_export[base_export["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
-
         total_leads, nome_arquivo = len(base_export), gerar_nome_arquivo_abandono(df_kpi, col_data_evento)
         st.success(f"✅ Base de abandono pronta! Total de Leads Gerados: {total_leads}")
 
@@ -232,7 +231,7 @@ def aba_abandono():
         st.download_button("⬇️ Baixar (.csv)", output, file_name=nome_arquivo, mime="text/csv")
         st.dataframe(base_export, width=750)
 
-# --- Aba Carrinho Abandonado ---
+##--- Aba Carrinho Abandonado
 def aba_carrinho():
     st.markdown("<div class='titulo-principal'>Carrinho Abandonado - Unificado</div>", unsafe_allow_html=True)
     file_carrinho = st.file_uploader("📂 Carrinho Abandonado", type=["xlsx","csv"], key="carrinho_file")
@@ -244,23 +243,24 @@ def aba_carrinho():
         df_nao_pagos = read_file(file_nao_pagos)
         df_pedidos = read_file(file_pedidos)
 
-        # Validações
-        for nome, df in zip(["Carrinho", "Não Pagos", "Pedidos"], [df_carrinho, df_nao_pagos, df_pedidos]):
+        for nome, df in zip(
+            ["Carrinho Abandonado", "Não Pagos", "Pedidos"], 
+            [df_carrinho, df_nao_pagos, df_pedidos]
+        ):
             if df is None or df.empty:
-                st.error(f"Arquivo {nome} inválido ou está vazio.")
+                st.error(f"Arquivo '{nome}' inválido ou está vazio.")
                 return
 
         df_carrinho = importar_excel_tratamento_carrinho(df_carrinho)
         df_nao_pagos = importar_excel_tratamento_nao_pagos(df_nao_pagos)
-
         df_unificado = pd.concat([df_carrinho, df_nao_pagos], ignore_index=True)
+
         if 'E-mail (cobrança)' in df_pedidos.columns:
             emails_unif = df_unificado['e-mail'].str.strip().str.lower()
             emails_ped = df_pedidos['E-mail (cobrança)'].astype(str).str.strip().str.lower()
             df_unificado = df_unificado[~emails_unif.isin(emails_ped)]
-        df_unificado = df_unificado[['Nome','Numero']] # firma layout
+        df_unificado = df_unificado[['Nome','Numero']]
 
-        # Exportação e limpeza
         layout_cols = ["TIPO_DE_REGISTRO","VALOR_DO_REGISTRO","MENSAGEM","NOME_CLIENTE","CPFCNPJ",
                        "CODCLIENTE","TAG","CORINGA1","CORINGA2","CORINGA3","CORINGA4","CORINGA5","PRIORIDADE"]
         df_saida = pd.DataFrame(columns=layout_cols)
@@ -268,7 +268,6 @@ def aba_carrinho():
         df_saida["NOME_CLIENTE"] = df_unificado["Nome"].str.strip().str.lower().str.capitalize()
         df_saida["TIPO_DE_REGISTRO"] = df_saida["VALOR_DO_REGISTRO"].apply(lambda x: "TELEFONE" if str(x).strip() else "")
 
-        # Bloqueio e finalização
         email_bloqueado = "ederaldosalustianodasilvaresta@gmail.com"
         numeros_bloqueados = {"5521969999549"}
         df_saida = df_saida[
@@ -277,7 +276,6 @@ def aba_carrinho():
         ]
         df_saida = df_saida.drop_duplicates(subset=["VALOR_DO_REGISTRO"], keep="first")
         df_saida = df_saida[df_saida["VALOR_DO_REGISTRO"].astype(str).str.strip() != ""]
-
         qtd_total_final, nome_arquivo = len(df_saida), gerar_nome_arquivo_carrinho()
         st.success(f"✅ Base Carrinho pronta! Total de Leads Gerados: {qtd_total_final}")
 
@@ -287,10 +285,9 @@ def aba_carrinho():
         st.download_button("⬇️ Baixar (.csv)", output, file_name=nome_arquivo, mime="text/csv")
         st.dataframe(df_saida, width=750)
 
-# --- Menu principal ---
+##--- Menu principal
 aba = st.sidebar.selectbox("Selecione a campanha", ["Campanha de Abandono", "Carrinho Abandonado"])
 if aba == "Campanha de Abandono":
     aba_abandono()
 else:
     aba_carrinho()
-
