@@ -1,40 +1,12 @@
-def read_file_carrinho_abandonado(f):
-    """
-    Leitura dedicada para Carrinho Abandonado: força separador vírgula se CSV.
-    """
-    try:
-        bytes_data = f.read()
-        data_io = BytesIO(bytes_data)
-        data_io.seek(0)
-        if f.name.lower().endswith('.csv'):
-            try:
-                # Força separador de vírgula para Carrinho Abandonado
-                df = pd.read_csv(data_io, sep=',', encoding='utf-8', on_bad_lines='warn', engine='python')
-            except Exception:
-                data_io.seek(0)
-                df = pd.read_csv(data_io, sep=',', encoding='ISO-8859-1', on_bad_lines='warn', engine='python')
-            return df
-        elif f.name.lower().endswith(('.xlsx', '.xls')):
-            return pd.read_excel(data_io)
-        else:
-            st.error("Formato de arquivo não suportado. Use CSV ou Excel.")
-            return None
-    except Exception as e:
-        st.error(f"Erro ao ler arquivo: {e}")
-        return None
-
 def aba_carrinho():
     st.markdown("<div class='titulo-principal'>Carrinho Abandonado - Unificado</div>", unsafe_allow_html=True)
-    file_carrinho = st.file_uploader("📂 Carrinho Abandonado", type=["xlsx","csv"], key="carrinho_file")
-    file_nao_pagos = st.file_uploader("📂 Não Pagos", type=["xlsx","csv"], key="naopagos_file")
-    file_pedidos = st.file_uploader("📂 Pedidos", type=["xlsx","csv"], key="pedidos_file")
-
+    file_carrinho = st.file_uploader("📂 Carrinho Abandonado", type=["xlsx", "csv"], key="carrinho_file")
+    file_nao_pagos = st.file_uploader("📂 Não Pagos", type=["xlsx", "csv"], key="naopagos_file")
+    file_pedidos = st.file_uploader("📂 Pedidos", type=["xlsx", "csv"], key="pedidos_file")
     if file_carrinho and file_nao_pagos and file_pedidos:
-        # Carrinho Abandonado é lido com separador vírgula
         df_carrinho = read_file_carrinho_abandonado(file_carrinho)
         df_nao_pagos = read_file(file_nao_pagos)
         df_pedidos = read_file(file_pedidos)
-
         for nome, df in zip(
             ["Carrinho Abandonado", "Não Pagos", "Pedidos"], 
             [df_carrinho, df_nao_pagos, df_pedidos]
@@ -42,11 +14,9 @@ def aba_carrinho():
             if df is None or df.empty:
                 st.error(f"Arquivo '{nome}' inválido ou está vazio.")
                 return
-
         df_carrinho = importar_excel_tratamento_carrinho(df_carrinho)
         df_nao_pagos = importar_excel_tratamento_nao_pagos(df_nao_pagos)
         df_unificado = pd.concat([df_carrinho, df_nao_pagos], ignore_index=True)
-
         if 'E-mail (cobrança)' in df_pedidos.columns:
             emails_unif = df_unificado['e-mail'].str.strip().str.lower()
             emails_ped = df_pedidos['E-mail (cobrança)'].astype(str).str.strip().str.lower()
@@ -72,4 +42,7 @@ def aba_carrinho():
         df_saida.to_csv(output, sep=";", index=False, encoding="utf-8-sig")
         output.seek(0)
         st.download_button("⬇️ Baixar (.csv)", output, file_name=nome_arquivo, mime="text/csv")
-        st.dataframe(df_saida, width=750)
+        # Exibe apenas as primeiras 100 linhas para performance local
+        st.dataframe(df_saida.head(100), width=750)
+        if len(df_saida) > 100:
+            st.warning("Exibindo apenas as primeiras 100 linhas para melhor performance.")
